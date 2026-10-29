@@ -46,6 +46,7 @@ deptrac:
             - symfony/routing
             - symfony/twig-bundle
             - mcp/sdk
+            - nikic/php-parser
   ruleset:
     Domain: ~
     Application:

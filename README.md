@@ -10,7 +10,7 @@ Construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le
 
 ## État
 
-🚧 Étape 2 en cours : `pii:scan` lit le schéma SQL et liste les colonnes candidates. Le scan du code et les règles PII-001 à PII-008 arrivent ensuite.
+🚧 Étape 2 en cours : `pii:scan` lit le schéma SQL, liste les colonnes candidates et suit leurs flux dans le code PHP (collecte, stockage, journaux, envois, hachage). Les règles PII-001 à PII-008 arrivent ensuite.
 
 ## Démarrage
 

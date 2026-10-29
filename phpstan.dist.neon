@@ -15,6 +15,7 @@ parameters:
     excludePaths:
         - config/preload.php
         - config/reference.php
+        - tests/Fixtures
     tmpDir: var/cache/phpstan
     symfony:
         containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
