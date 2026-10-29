@@ -22,4 +22,8 @@ RUN composer dump-autoload --optimize \
     && mkdir -p var \
     && chown -R www-data:www-data var
 
+COPY --chmod=755 docker/app/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+ENTRYPOINT ["docker-entrypoint"]
+CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--adapter", "caddyfile"]
+
 EXPOSE 8080
