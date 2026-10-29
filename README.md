@@ -10,7 +10,7 @@ Construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le
 
 ## État
 
-🚧 Étape 0 (socle) : squelette Symfony, Docker Compose, CI, outils qualité, serveur MCP vide. Les scanners arrivent aux étapes suivantes.
+🚧 Étape 1 : socle en place et appli de démo [Clinique Bonsoir](demo/legacy-app/README.md) avec son contrat de test `expected-findings.json`. Les scanners arrivent à l'étape 2.
 
 ## Démarrage
 
@@ -23,6 +23,12 @@ docker compose up -d
 - Appli PII Radar : http://localhost:8080/health
 - Appli de démo « Clinique Bonsoir » : http://localhost:8081
 - Serveur MCP HTTP : http://localhost:8080/mcp/pii_radar
+
+Ports 8080 ou 8081 déjà pris sur votre machine ? Changez-les au lancement :
+
+```bash
+APP_PORT=8090 LEGACY_APP_PORT=8091 docker compose up -d
+```
 
 ### Brancher le serveur MCP (STDIO)
 
