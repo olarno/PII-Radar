@@ -10,3 +10,6 @@ services:
         exclude:
             - '../src/Kernel.php'
             - '../src/Domain/'
+
+    # Domain services are plain PHP, registered explicitly.
+    App\Domain\Pii\ColumnNameClassifier: ~

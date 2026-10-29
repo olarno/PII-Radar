@@ -10,7 +10,7 @@ Construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le
 
 ## État
 
-🚧 Étape 1 : socle en place et appli de démo [Clinique Bonsoir](demo/legacy-app/README.md) avec son contrat de test `expected-findings.json`. Les scanners arrivent à l'étape 2.
+🚧 Étape 2 en cours : `pii:scan` lit le schéma SQL et liste les colonnes candidates. Le scan du code et les règles PII-001 à PII-008 arrivent ensuite.
 
 ## Démarrage
 
@@ -28,6 +28,13 @@ Ports 8080 ou 8081 déjà pris sur votre machine ? Changez-les au lancement :
 
 ```bash
 APP_PORT=8090 LEGACY_APP_PORT=8091 docker compose up -d
+```
+
+### Scanner l'appli de démo
+
+```bash
+docker compose exec app bin/console pii:scan demo/legacy-app
+docker compose exec app bin/console pii:scan demo/legacy-app --format=json
 ```
 
 ### Brancher le serveur MCP (STDIO)
