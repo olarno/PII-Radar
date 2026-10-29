@@ -38,6 +38,7 @@ deptrac:
             - symfony/ai-sqlite-store
             - symfony/ai-store
             - symfony/console
+            - symfony/finder
             - symfony/framework-bundle
             - symfony/http-client
             - symfony/http-foundation
