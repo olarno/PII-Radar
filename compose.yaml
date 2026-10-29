@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: docker/app/Dockerfile
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     # Secrets such as HUGGINGFACE_API_KEY are read by Symfony from .env.local (mounted with the code).
     volumes:
       - ./:/app
@@ -17,7 +17,7 @@ services:
       context: .
       dockerfile: docker/legacy-app/Dockerfile
     ports:
-      - "8081:80"
+      - "${LEGACY_APP_PORT:-8081}:80"
     environment:
       DB_HOST: mariadb
       DB_NAME: clinique

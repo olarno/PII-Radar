@@ -24,6 +24,12 @@ docker compose up -d
 - Appli de démo « Clinique Bonsoir » : http://localhost:8081
 - Serveur MCP HTTP : http://localhost:8080/mcp/pii_radar
 
+Ports 8080 ou 8081 déjà pris sur votre machine ? Changez-les au lancement :
+
+```bash
+APP_PORT=8090 LEGACY_APP_PORT=8091 docker compose up -d
+```
+
 ### Brancher le serveur MCP (STDIO)
 
 ```json
