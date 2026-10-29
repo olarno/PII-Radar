@@ -6,9 +6,9 @@ services:
     ports:
       - "${APP_PORT:-8080}:8080"
     # Secrets such as HUGGINGFACE_API_KEY are read by Symfony from .env.local (mounted with the code).
+    # vendor/ lives in the mounted project and is refreshed by "composer install" at startup.
     volumes:
       - ./:/app
-      - /app/vendor
       # The audited code is mounted read-only: PII Radar never writes into it.
       - ./demo/legacy-app:/audited/legacy-app:ro
 
