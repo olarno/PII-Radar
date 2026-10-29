@@ -21,7 +21,7 @@ docker compose up -d
 ```
 
 - Appli PII Radar : http://localhost:8080/health
-- Appli de démo « Clinique Bonsoir » : http://localhost:8081
+- Appli de démo « Clinique Bonsoir » : http://localhost:8081 (compte `reception@clinique-bonsoir.test` / `bonsoir`, rappelé sur la page de connexion)
 - Serveur MCP HTTP : http://localhost:8080/mcp/pii_radar
 
 Ports 8080 ou 8081 déjà pris sur votre machine ? Changez-les au lancement :

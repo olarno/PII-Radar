@@ -24,8 +24,13 @@ $titre = 'Connexion';
 include 'includes/header.php';
 ?>
 <?php if ($erreur) { echo '<p class="alerte">' . $erreur . '</p>'; } ?>
+<div class="demo">
+    <strong>Démo PII Radar</strong> &middot; application fictive, aucune vraie personne.<br>
+    Comptes : <code>reception@clinique-bonsoir.test</code> / <code>bonsoir</code>
+    &middot; <code>admin@clinique-bonsoir.test</code> / <code>admin2014</code>
+</div>
 <form method="post">
-    <label>Courriel</label> <input type="text" name="courriel"><br>
+    <label>Courriel</label> <input type="text" name="courriel" value="reception@clinique-bonsoir.test"><br>
     <label>Mot de passe</label> <input type="password" name="mot_de_passe"><br>
     <button type="submit">Se connecter</button>
 </form>
