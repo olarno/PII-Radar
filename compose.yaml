@@ -1,0 +1,43 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    ports:
+      - "8080:8080"
+    # Secrets such as HUGGINGFACE_API_KEY are read by Symfony from .env.local (mounted with the code).
+    volumes:
+      - ./:/app
+      - /app/vendor
+      # The audited code is mounted read-only: PII Radar never writes into it.
+      - ./demo/legacy-app:/audited/legacy-app:ro
+
+  legacy-app:
+    build:
+      context: .
+      dockerfile: docker/legacy-app/Dockerfile
+    ports:
+      - "8081:80"
+    environment:
+      DB_HOST: mariadb
+      DB_NAME: clinique
+      DB_USER: clinique
+      DB_PASSWORD: clinique
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  mariadb:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: clinique
+      MARIADB_USER: clinique
+      MARIADB_PASSWORD: clinique
+      MARIADB_ROOT_PASSWORD: root
+    volumes:
+      - ./demo/legacy-app/db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

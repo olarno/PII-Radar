@@ -1,0 +1,11 @@
+# PII Radar MCP server: tools, resources and prompts are registered in step 5
+# from src/Infrastructure/Mcp via #[McpTool], #[McpResource], #[McpPrompt].
+mcp:
+    servers:
+        pii_radar:
+            name: 'PII Radar'
+            description: 'Ask where personal data lives in the audited application and whether a field may be logged.'
+            registry: ['App\Infrastructure\Mcp\']
+            transports:
+                stdio: true
+                http: true

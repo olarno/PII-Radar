@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    name: Lint, static analysis, architecture, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, pdo_sqlite
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Coding standards
+        run: composer cs
+
+      - name: Warm up the container for PHPStan
+        run: bin/console cache:warmup --env=dev
+
+      - name: PHPStan (level max)
+        run: composer phpstan
+
+      - name: Deptrac (layer boundaries)
+        run: composer deptrac
+
+      - name: Tests (no AI key needed)
+        run: composer test
+
+  docker:
+    name: Docker Compose build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        run: docker compose build

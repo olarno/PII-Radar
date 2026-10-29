@@ -1,0 +1,9 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+    session: false
+    property_info:
+        with_constructor_extractor: true
+
+when@test:
+    framework:
+        test: true

@@ -1,0 +1,60 @@
+# Clean architecture boundaries: dependencies point inwards only.
+#   UI -> Application, Infrastructure, Domain
+#   Infrastructure -> Application, Domain
+#   Application -> Domain
+#   Domain -> nothing (pure PHP)
+deptrac:
+  paths:
+    - ./src
+  exclude_files:
+    - '#.*Kernel\.php$#'
+  layers:
+    - name: Domain
+      collectors:
+        - type: directory
+          value: src/Domain/.*
+    - name: Application
+      collectors:
+        - type: directory
+          value: src/Application/.*
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          value: src/Infrastructure/.*
+    - name: UI
+      collectors:
+        - type: directory
+          value: src/UI/.*
+    - name: Vendor
+      collectors:
+        - type: composer
+          composerPath: composer.json
+          composerLockPath: composer.lock
+          packages:
+            - symfony/ai-agent
+            - symfony/ai-bundle
+            - symfony/ai-hugging-face-platform
+            - symfony/ai-platform
+            - symfony/ai-sqlite-store
+            - symfony/ai-store
+            - symfony/console
+            - symfony/framework-bundle
+            - symfony/http-client
+            - symfony/http-foundation
+            - symfony/mcp-bundle
+            - symfony/routing
+            - symfony/twig-bundle
+            - mcp/sdk
+  ruleset:
+    Domain: ~
+    Application:
+      - Domain
+    Infrastructure:
+      - Application
+      - Domain
+      - Vendor
+    UI:
+      - Application
+      - Infrastructure
+      - Domain
+      - Vendor
