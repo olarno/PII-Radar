@@ -10,6 +10,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "mcp/sdk": "^0.9",
+        "nyholm/psr7": "^1.8",
         "symfony/ai-agent": "^1.0",
         "symfony/ai-bundle": "^1.0",
         "symfony/ai-hugging-face-platform": "^1.0",
