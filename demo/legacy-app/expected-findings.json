@@ -1,0 +1,170 @@
+{
+    "application": "clinique-bonsoir",
+    "description": "Résultat attendu du scan de Clinique Bonsoir. Contrat du test de bout en bout : 100 % des findings retrouvés, aucun champ de not_pii classé comme donnée personnelle.",
+    "scales": {
+        "category": ["identity", "contact", "financial", "health", "government_id", "location", "technical"],
+        "sensitivity": ["low", "medium", "high"],
+        "severity": ["low", "medium", "high", "critical"]
+    },
+    "pii_fields": [
+        {"field": "patients.prenom", "category": "identity", "sensitivity": "medium"},
+        {"field": "patients.nom", "category": "identity", "sensitivity": "medium"},
+        {"field": "patients.date_naissance", "category": "identity", "sensitivity": "medium"},
+        {"field": "patients.nam", "category": "government_id", "sensitivity": "high"},
+        {"field": "patients.courriel", "category": "contact", "sensitivity": "medium"},
+        {"field": "patients.telephone", "category": "contact", "sensitivity": "medium"},
+        {"field": "patients.adresse", "category": "location", "sensitivity": "medium"},
+        {"field": "patients.ville", "category": "location", "sensitivity": "low"},
+        {"field": "patients.code_postal", "category": "location", "sensitivity": "medium"},
+        {"field": "users.nom_utilisateur", "category": "identity", "sensitivity": "low"},
+        {"field": "users.courriel", "category": "contact", "sensitivity": "medium"},
+        {"field": "users.mot_de_passe", "category": "technical", "sensitivity": "high"},
+        {"field": "users.derniere_ip", "category": "technical", "sensitivity": "low"},
+        {"field": "rendezvous.motif", "category": "health", "sensitivity": "high"},
+        {"field": "paiements.carte_4_derniers", "category": "financial", "sensitivity": "low"},
+        {"field": "paiements.titulaire_carte", "category": "financial", "sensitivity": "medium"}
+    ],
+    "not_pii": [
+        {"field": "parametres_courriel.email_template", "reason": "Gabarit de message avec des variables {prenom} et {date}, sans aucune donnée réelle."},
+        {"field": "parametres_courriel.sujet", "reason": "Sujet de courriel générique."},
+        {"field": "ville_reference.nom", "reason": "Liste publique de villes, sans lien avec une personne."},
+        {"field": "ville_reference.region", "reason": "Liste publique de régions administratives."},
+        {"field": "ville_reference.code_region", "reason": "Code de région administrative."}
+    ],
+    "findings": [
+        {
+            "id": "F01",
+            "rule": "PII-001",
+            "severity": "high",
+            "location": {"file": "db/01-schema.sql", "line": 11},
+            "evidence": "nam VARCHAR(12) NOT NULL",
+            "fields": ["patients.nam"],
+            "summary": "Numéro d'assurance maladie stocké en clair."
+        },
+        {
+            "id": "F02",
+            "rule": "PII-001",
+            "severity": "high",
+            "location": {"file": "db/01-schema.sql", "line": 34},
+            "evidence": "motif TEXT NOT NULL",
+            "fields": ["rendezvous.motif"],
+            "summary": "Motif médical en texte libre stocké en clair."
+        },
+        {
+            "id": "F03",
+            "rule": "PII-002",
+            "severity": "high",
+            "location": {"file": "public/patient.php", "line": 11},
+            "evidence": "error_log('Erreur dossier patient : ' . print_r($patient, true)",
+            "fields": ["patients.prenom", "patients.nom", "patients.date_naissance", "patients.nam", "patients.courriel", "patients.telephone", "patients.adresse", "patients.ville", "patients.code_postal"],
+            "summary": "Le dossier patient complet est écrit dans le journal d'erreurs PHP."
+        },
+        {
+            "id": "F04",
+            "rule": "PII-002",
+            "severity": "medium",
+            "location": {"file": "public/paiement.php", "line": 13},
+            "evidence": "file_put_contents(__DIR__ . '/../logs/paiements.log'",
+            "fields": ["paiements.titulaire_carte", "paiements.carte_4_derniers"],
+            "summary": "Nom du titulaire et fin de carte écrits dans un journal texte."
+        },
+        {
+            "id": "F05",
+            "rule": "PII-003",
+            "severity": "medium",
+            "location": {"file": "public/rappel.php", "line": 14},
+            "evidence": "curl_init('https://api.twilio.com/",
+            "fields": ["patients.prenom", "patients.nom", "patients.telephone"],
+            "recipient": "api.twilio.com",
+            "summary": "Nom et téléphone du patient envoyés à Twilio, tiers absent du registre."
+        },
+        {
+            "id": "F06",
+            "rule": "PII-008",
+            "severity": "medium",
+            "location": {"file": "public/rappel.php", "line": 14},
+            "evidence": "curl_init('https://api.twilio.com/",
+            "fields": ["patients.prenom", "patients.nom", "patients.telephone"],
+            "recipient": "api.twilio.com",
+            "jurisdiction": "US",
+            "summary": "Communication de renseignements personnels hors Québec (États-Unis) : EFVP à réaliser."
+        },
+        {
+            "id": "F07",
+            "rule": "PII-004",
+            "severity": "high",
+            "location": {"file": "public/inscription.php", "line": 7},
+            "evidence": "$sql = \"INSERT INTO patients",
+            "fields": ["patients.prenom", "patients.nom", "patients.date_naissance", "patients.nam", "patients.courriel", "patients.telephone", "patients.adresse", "patients.ville", "patients.code_postal"],
+            "summary": "Requête INSERT construite par concaténation de $_POST."
+        },
+        {
+            "id": "F08",
+            "rule": "PII-004",
+            "severity": "high",
+            "location": {"file": "public/login.php", "line": 9},
+            "evidence": "WHERE courriel = '\" . $courriel . \"'",
+            "fields": ["users.courriel"],
+            "summary": "Requête de connexion concaténée avec le courriel saisi."
+        },
+        {
+            "id": "F09",
+            "rule": "PII-004",
+            "severity": "medium",
+            "location": {"file": "public/login.php", "line": 16},
+            "evidence": "SET derniere_ip = '\" . $_SERVER['REMOTE_ADDR']",
+            "fields": ["users.derniere_ip"],
+            "summary": "Adresse IP insérée dans une requête par concaténation."
+        },
+        {
+            "id": "F10",
+            "rule": "PII-005",
+            "severity": "critical",
+            "location": {"file": "public/login.php", "line": 7},
+            "evidence": "md5($_POST['mot_de_passe'])",
+            "fields": ["users.mot_de_passe"],
+            "summary": "Mots de passe hachés en MD5."
+        },
+        {
+            "id": "F11",
+            "rule": "PII-006",
+            "severity": "medium",
+            "location": {"file": "db/01-schema.sql", "line": 6},
+            "evidence": "CREATE TABLE patients",
+            "fields": ["patients"],
+            "summary": "Aucune suppression ni purge des patients."
+        },
+        {
+            "id": "F12",
+            "rule": "PII-006",
+            "severity": "medium",
+            "location": {"file": "db/01-schema.sql", "line": 20},
+            "evidence": "CREATE TABLE users",
+            "fields": ["users"],
+            "summary": "Aucune suppression ni purge des comptes du personnel."
+        },
+        {
+            "id": "F13",
+            "rule": "PII-006",
+            "severity": "medium",
+            "location": {"file": "db/01-schema.sql", "line": 41},
+            "evidence": "CREATE TABLE paiements",
+            "fields": ["paiements"],
+            "summary": "Aucune suppression ni purge des paiements."
+        },
+        {
+            "id": "F14",
+            "rule": "PII-007",
+            "severity": "critical",
+            "location": {"file": "public/export_patients.csv"},
+            "fields": ["patients.prenom", "patients.nom", "patients.date_naissance", "patients.nam", "patients.courriel", "patients.telephone", "patients.adresse", "patients.ville", "patients.code_postal"],
+            "summary": "Export CSV des patients accessible publiquement dans le webroot."
+        }
+    ],
+    "must_not_flag": [
+        {"rule": "PII-006", "fields": ["rendezvous"], "reason": "cron/purge_rendezvous.php supprime les rendez-vous terminés depuis plus de 5 ans."},
+        {"rule": "PII-004", "file": "public/patient.php", "reason": "Concaténations d'identifiants castés en entier, sans donnée personnelle."},
+        {"rule": "PII-004", "file": "public/rappel.php", "reason": "Concaténations d'identifiants castés en entier, sans donnée personnelle."},
+        {"rule": "PII-003", "file": "public/rendezvous.php", "reason": "Le courriel de confirmation est envoyé au patient lui-même, pas à un tiers."}
+    ]
+}

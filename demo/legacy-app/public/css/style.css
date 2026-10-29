@@ -1,0 +1,13 @@
+body { font-family: Verdana, Arial, sans-serif; font-size: 13px; margin: 0; background: #eef1f5; color: #222; }
+header { background: #2b4a6f; color: #fff; padding: 10px 20px; }
+header nav { display: inline; margin-left: 30px; }
+header nav a { color: #cfe0f5; margin-right: 15px; text-decoration: none; }
+main { background: #fff; margin: 20px; padding: 20px; border: 1px solid #c8d0da; }
+h1 { font-size: 18px; color: #2b4a6f; border-bottom: 1px solid #c8d0da; padding-bottom: 6px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #c8d0da; padding: 4px 8px; text-align: left; }
+th { background: #dde5ee; }
+label { display: inline-block; width: 160px; }
+input, select, textarea { margin: 3px 0; }
+.alerte { background: #fff3cd; border: 1px solid #e0c36c; padding: 8px; }
+footer { color: #777; text-align: center; font-size: 11px; padding-bottom: 20px; }

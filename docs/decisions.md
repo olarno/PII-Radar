@@ -1,6 +1,6 @@
 # Décisions de cadrage
 
-Décisions validées le 29 octobre 2026, en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
+Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'étape 1), en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
 
 | # | Sujet | Décision | Conséquence |
 |---|---|---|---|
@@ -11,6 +11,9 @@ Décisions validées le 29 octobre 2026, en complément du doc de cadrage. Elles
 | 5 | PII-008 (hors Québec) | Table déterministe des hôtes connus et de leur juridiction. | Pas de devinette : un hôte inconnu est signalé « juridiction à confirmer ». |
 | 6 | Fuite vers le LLM | Les extraits de code passent par un masquage regex (courriel, téléphone, NAS, NAM, code postal) avant tout envoi au LLM, dès le MVP. | Le LLM ne voit jamais une donnée personnelle, même écrite en dur dans le code audité. |
 | 7 | Pré-release | Noms de paquets vérifiés sur Packagist le jour 1, versions verrouillées dans `composer.lock`. | Voir ci-dessous. |
+| 8 | Appli de démo | Clinique Bonsoir est un faux back-office : les pages s'affichent et lisent la base, sans viser une appli complète. | Crédible à l'écran pour la vidéo, sans y passer de temps. |
+| 9 | API SMS de la démo | `rappel.php` appelle Twilio (`api.twilio.com`), que la table des juridictions de PII-008 reconnaît comme américain. | La démo n'appelle jamais réellement Twilio (identifiants absents). |
+| 10 | Pièges à faux positifs | Ceux du doc de cadrage : `parametres_courriel.email_template` et la table `ville_reference`. | Listés dans `not_pii` de `expected-findings.json`. |
 
 ## Versions verrouillées (jour 1)
 
