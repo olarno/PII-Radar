@@ -15,7 +15,9 @@ use App\Domain\Pii\PiiCategory;
 use App\Domain\Pii\Sensitivity;
 use App\Domain\Schema\Schema;
 use App\Domain\Schema\Table;
+use App\Infrastructure\Ai\Http\ErrorBodyRecordingHttpClient;
 use Symfony\AI\Agent\AgentInterface;
+use Symfony\AI\Platform\Exception\AuthenticationException;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\PlatformOptions;
@@ -35,6 +37,7 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
     public function __construct(
         private AgentInterface $arbiter,
         private AuditSession $session,
+        private ?ErrorBodyRecordingHttpClient $httpClient = null,
     ) {
     }
 
@@ -53,7 +56,8 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
             $result = $execution->asObject(ArbitrationResult::class);
             $usage = self::usage($execution->getResult()->getMetadata()->get('token_usage'));
         } catch (\Throwable $exception) {
-            throw new ArbitrationFailed(\sprintf('L\'agent n\'a pas pu arbitrer les candidats : %s', $exception->getMessage()), previous: $exception);
+            $providerError = $this->httpClient?->lastError();
+            throw new ArbitrationFailed(\sprintf('L\'agent n\'a pas pu arbitrer les candidats : %s%s', $exception->getMessage(), null === $providerError ? '' : \sprintf(' (réponse du fournisseur : %s)', $providerError)), $exception instanceof AuthenticationException, $exception);
         } finally {
             $this->session->end();
         }

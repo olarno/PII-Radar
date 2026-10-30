@@ -44,7 +44,12 @@ final readonly class ScanCommand
 
             return Command::FAILURE;
         } catch (ArbitrationFailed $exception) {
-            $io->error([$exception->getMessage(), 'Vérifiez HUGGINGFACE_API_KEY dans .env.local, ou relancez avec --no-ai pour un scan sans agent.']);
+            $io->error([
+                $exception->getMessage(),
+                $exception->authentication
+                    ? 'Vérifiez HUGGINGFACE_API_KEY dans .env.local, ou relancez avec --no-ai pour un scan sans agent.'
+                    : 'Le fournisseur a refusé la requête. Essayez un autre modèle (PII_RADAR_MODEL), ou relancez avec --no-ai pour un scan sans agent.',
+            ]);
 
             return Command::FAILURE;
         }

@@ -8,4 +8,4 @@ services:
 
     pii_radar.test.cassette_http_client:
         class: Symfony\AI\Platform\Test\Replay\CassetteHttpClient
-        arguments: ['@pii_radar.test.demo_cassette', '@http_client']
+        arguments: ['@pii_radar.test.demo_cassette', '@App\Infrastructure\Ai\Http\ErrorBodyRecordingHttpClient']
