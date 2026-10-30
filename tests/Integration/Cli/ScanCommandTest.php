@@ -25,6 +25,11 @@ final class ScanCommandTest extends KernelTestCase
             ['field' => 'patients.nam', 'type' => 'VARCHAR(12)', 'category' => 'government_id', 'sensitivity' => 'high', 'confidence' => 0.9, 'location' => ['file' => 'db/01-schema.sql', 'line' => 11], 'reason' => 'Le nom de colonne contient « nam ».'],
             $output['candidates'],
         );
+        self::assertIsArray($output['flows']);
+        self::assertContains(
+            ['operation' => 'send', 'fields' => ['patients.telephone', 'patients.prenom', 'patients.nom', 'rendezvous.date_heure'], 'location' => ['file' => 'public/rappel.php', 'line' => 14], 'target' => 'api.twilio.com', 'concatenated_fields' => []],
+            $output['flows'],
+        );
     }
 
     public function testPrintsATableByDefault(): void
@@ -35,6 +40,7 @@ final class ScanCommandTest extends KernelTestCase
         $tester->assertCommandIsSuccessful();
         self::assertStringContainsString('patients.nam', $tester->getDisplay());
         self::assertStringContainsString('Identifiant gouvernemental', $tester->getDisplay());
+        self::assertStringContainsString('api.twilio.com', $tester->getDisplay());
     }
 
     public function testFailsOnAMissingDirectory(): void

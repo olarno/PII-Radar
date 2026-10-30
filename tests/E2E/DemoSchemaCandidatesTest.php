@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\E2E;
 
-use App\Application\DetectPiiCandidates;
+use App\Application\ScanProject;
 use App\Domain\Pii\PiiCandidate;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -51,7 +51,7 @@ final class DemoSchemaCandidatesTest extends KernelTestCase
      */
     private function candidates(): array
     {
-        $detect = self::getContainer()->get(DetectPiiCandidates::class);
+        $detect = self::getContainer()->get(ScanProject::class);
 
         $indexed = [];
         foreach ($detect(self::DEMO_DIR)->candidates as $candidate) {

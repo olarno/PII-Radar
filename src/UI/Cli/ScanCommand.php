@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\UI\Cli;
 
-use App\Application\DetectPiiCandidates;
+use App\Application\ScanProject;
+use App\Domain\Flow\FlowPoint;
 use App\Domain\Pii\PiiCandidate;
+use App\Domain\Schema\FieldReference;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
@@ -16,7 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final readonly class ScanCommand
 {
     public function __construct(
-        private DetectPiiCandidates $detectPiiCandidates,
+        private ScanProject $scanProject,
     ) {
     }
 
@@ -32,15 +34,15 @@ final readonly class ScanCommand
         }
 
         try {
-            $result = ($this->detectPiiCandidates)($path);
+            $report = ($this->scanProject)($path);
         } catch (\InvalidArgumentException $exception) {
             $io->error($exception->getMessage());
 
             return Command::FAILURE;
         }
 
-        $tableCount = \count($result->schema->tables());
-        $columnCount = \count($result->schema->columns());
+        $tableCount = \count($report->schema->tables());
+        $columnCount = \count($report->schema->columns());
 
         if ('json' === $format) {
             $io->writeln(json_encode([
@@ -53,14 +55,23 @@ final readonly class ScanCommand
                     'confidence' => $candidate->confidence,
                     'location' => ['file' => $candidate->column->location->file, 'line' => $candidate->column->location->line],
                     'reason' => $candidate->reason,
-                ], $result->candidates),
+                ], $report->candidates),
+                'flows' => array_map(static fn (FlowPoint $flow): array => [
+                    'operation' => $flow->operation->value,
+                    'fields' => self::names($flow->fields),
+                    'location' => ['file' => $flow->location->file, 'line' => $flow->location->line],
+                    'target' => $flow->target,
+                    'concatenated_fields' => self::names($flow->concatenatedFields),
+                ], $report->flows),
             ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR));
 
             return Command::SUCCESS;
         }
 
-        $io->title('PII Radar · schéma');
-        $io->text(\sprintf('%d tables, %d colonnes lues. %d colonnes candidates.', $tableCount, $columnCount, \count($result->candidates)));
+        $io->title('PII Radar');
+
+        $io->section('Schéma');
+        $io->text(\sprintf('%d tables, %d colonnes lues. %d colonnes candidates.', $tableCount, $columnCount, \count($report->candidates)));
         $io->table(
             ['Champ', 'Catégorie', 'Sensibilité', 'Confiance', 'Emplacement'],
             array_map(static fn (PiiCandidate $candidate): array => [
@@ -69,10 +80,33 @@ final readonly class ScanCommand
                 $candidate->sensitivity->label(),
                 \sprintf('%d %%', (int) round($candidate->confidence * 100)),
                 (string) $candidate->column->location,
-            ], $result->candidates),
+            ], $report->candidates),
+        );
+
+        $io->section('Flux dans le code');
+        $io->text(\sprintf('%d points de flux.', \count($report->flows)));
+        $io->table(
+            ['Opération', 'Emplacement', 'Cible', 'Champs', 'Concaténés en SQL'],
+            array_map(static fn (FlowPoint $flow): array => [
+                $flow->operation->label(),
+                (string) $flow->location,
+                $flow->target ?? '',
+                implode("\n", self::names($flow->fields)),
+                implode("\n", self::names($flow->concatenatedFields)),
+            ], $report->flows),
         );
         $io->note('Candidats issus des noms de colonnes : l\'agent les confirmera ou les écartera (étape 4).');
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param list<FieldReference> $fields
+     *
+     * @return list<string>
+     */
+    private static function names(array $fields): array
+    {
+        return array_map(static fn (FieldReference $field): string => (string) $field, $fields);
     }
 }

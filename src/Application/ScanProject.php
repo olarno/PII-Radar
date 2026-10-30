@@ -4,22 +4,24 @@ declare(strict_types=1);
 
 namespace App\Application;
 
+use App\Application\Port\CodeScanner;
 use App\Application\Port\SchemaReader;
 use App\Domain\Pii\ColumnNameClassifier;
 use App\Domain\Pii\PiiCandidate;
 
 /**
- * Reads the audited schema and lists the columns that may hold personal data.
+ * Scans an audited project: its schema, the columns that may hold personal data, and the code flows that touch them.
  */
-final readonly class DetectPiiCandidates
+final readonly class ScanProject
 {
     public function __construct(
         private SchemaReader $schemaReader,
+        private CodeScanner $codeScanner,
         private ColumnNameClassifier $classifier,
     ) {
     }
 
-    public function __invoke(string $projectPath): SchemaScanResult
+    public function __invoke(string $projectPath): ScanReport
     {
         $schema = $this->schemaReader->read($projectPath);
 
@@ -28,6 +30,6 @@ final readonly class DetectPiiCandidates
             $schema->columns(),
         ), static fn (?PiiCandidate $candidate): bool => null !== $candidate));
 
-        return new SchemaScanResult($schema, $candidates);
+        return new ScanReport($schema, $candidates, $this->codeScanner->scan($projectPath, $schema));
     }
 }

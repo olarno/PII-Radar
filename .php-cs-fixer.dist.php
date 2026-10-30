@@ -2,7 +2,7 @@
 
 $finder = (new PhpCsFixer\Finder())
     ->in(__DIR__)
-    ->exclude(['var', 'demo'])
+    ->exclude(['var', 'demo', 'tests/Fixtures'])
     ->notPath('config/reference.php')
 ;
 
