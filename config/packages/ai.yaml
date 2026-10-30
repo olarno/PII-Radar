@@ -7,8 +7,9 @@ ai:
             # Keeps the provider's error bodies, which the converter would reduce to "Bad Request".
             http_client: App\Infrastructure\Ai\Http\ErrorBodyRecordingHttpClient
 
+    # Arbitration runs in two steps, because providers reject "tools" and "response_format" in the same request.
     agent:
-        # Confirms or rejects the candidates the name heuristic is unsure about.
+        # 1. Investigates the candidates the name heuristic is unsure about, with its tools.
         arbiter:
             platform: 'ai.platform.huggingface'
             model: '%env(PII_RADAR_MODEL)%'
@@ -22,6 +23,13 @@ ai:
             fault_tolerant_toolbox: true
             # Budget guard: 4 candidates on the demo need far fewer calls.
             max_tool_calls: 12
+
+        # 2. Turns the investigation into structured verdicts, without tools.
+        verdicts:
+            platform: 'ai.platform.huggingface'
+            model: '%env(PII_RADAR_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/config/prompts/verdicts.md'
 
 when@test:
     ai:

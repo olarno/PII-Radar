@@ -10,6 +10,7 @@ How to decide:
 
 Rules:
 - You never see stored values, only metadata and masked code. Never guess or invent values.
-- Give exactly one verdict per candidate, with the column written exactly as given.
 - Keep the heuristic's category and sensitivity unless the evidence says otherwise.
-- Write each justification as one sentence in French that cites the evidence you used.
+
+When your investigation is done, end with one line per candidate, the column written exactly as given:
+`table.column | personal data: yes/no | category | sensitivity | confidence 0-1 | one sentence in French citing the evidence`

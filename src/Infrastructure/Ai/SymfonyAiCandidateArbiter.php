@@ -25,9 +25,11 @@ use Symfony\AI\Platform\TokenUsage\TokenUsageAggregation;
 use Symfony\AI\Platform\TokenUsage\TokenUsageInterface;
 
 /**
- * Asks the "arbiter" agent (config/packages/ai.yaml) to confirm or reject ambiguous candidates.
+ * Confirms or rejects ambiguous candidates in two steps (config/packages/ai.yaml):
+ * the "arbiter" agent investigates with its tools, then the "verdicts" agent writes structured verdicts without tools,
+ * since providers reject "tools" and "response_format" in the same request.
  *
- * The prompt carries only metadata: table and column names, SQL types, the heuristic's guess.
+ * The prompts carry only metadata (table and column names, SQL types, the heuristic's guess) and masked code.
  */
 final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
 {
@@ -36,6 +38,7 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
 
     public function __construct(
         private AgentInterface $arbiter,
+        private AgentInterface $verdicts,
         private AuditSession $session,
         private ?ErrorBodyRecordingHttpClient $httpClient = null,
     ) {
@@ -49,12 +52,19 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
 
         $this->session->start($projectPath, $schema, $flows);
         try {
-            $execution = $this->arbiter->call(
-                new MessageBag(Message::ofUser(self::prompt($schema, $candidates))),
+            $prompt = self::prompt($schema, $candidates);
+            $investigation = $this->arbiter->call(new MessageBag(Message::ofUser($prompt)), [PlatformOptions::MAX_OUTPUT_TOKENS => self::MAX_OUTPUT_TOKENS]);
+            $conclusions = $investigation->asText();
+
+            $structured = $this->verdicts->call(
+                new MessageBag(Message::ofUser(\sprintf("%s\n\nInvestigator's conclusions:\n%s", $prompt, $conclusions))),
                 ['response_format' => ArbitrationResult::class, PlatformOptions::MAX_OUTPUT_TOKENS => self::MAX_OUTPUT_TOKENS],
             );
-            $result = $execution->asObject(ArbitrationResult::class);
-            $usage = self::usage($execution->getResult()->getMetadata()->get('token_usage'));
+            $result = $structured->asObject(ArbitrationResult::class);
+            $usage = self::sum(
+                self::usage($investigation->getResult()->getMetadata()->get('token_usage')),
+                self::usage($structured->getResult()->getMetadata()->get('token_usage')),
+            );
         } catch (\Throwable $exception) {
             $providerError = $this->httpClient?->lastError();
             throw new ArbitrationFailed(\sprintf('L\'agent n\'a pas pu arbitrer les candidats : %s%s', $exception->getMessage(), null === $providerError ? '' : \sprintf(' (réponse du fournisseur : %s)', $providerError)), $exception instanceof AuthenticationException, $exception);
@@ -77,6 +87,16 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
                 'L\'agent n\'a pas rendu de verdict : décision de l\'heuristique. '.$candidate->reason,
                 DecisionSource::Rules,
             ), $candidates), $usage);
+    }
+
+    private static function sum(?AgentUsage $first, ?AgentUsage $second): ?AgentUsage
+    {
+        if (null === $first || null === $second) {
+            return $first ?? $second;
+        }
+        $add = static fn (?int $a, ?int $b): ?int => null === $a && null === $b ? null : (int) $a + (int) $b;
+
+        return new AgentUsage($first->calls + $second->calls, $add($first->inputTokens, $second->inputTokens), $add($first->outputTokens, $second->outputTokens));
     }
 
     private static function usage(mixed $tokenUsage): ?AgentUsage

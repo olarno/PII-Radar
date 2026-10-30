@@ -31,7 +31,7 @@ use Symfony\AI\Platform\TokenUsage\TokenUsage;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
- * Drives the real agent loop (tools, structured output) against a scripted platform: no network, no key.
+ * Drives the real agents (investigation with tools, then structured verdicts) against a scripted platform: no network, no key.
  */
 final class SymfonyAiCandidateArbiterTest extends TestCase
 {
@@ -47,6 +47,7 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
     {
         $arbiter = $this->arbiter([
             new ToolCallResult([new ToolCall('call_1', 'read_code_snippet', ['file' => 'src/patients.php', 'line' => 2])]),
+            new TextResult("patients.nom | personal data: yes | identity | medium | 0.95 | Nom d'un patient, journalisé dans src/patients.php.\nville_reference.nom | personal data: no | location | low | 0.9 | Liste de référence des villes."),
             new TextResult((string) json_encode(['verdicts' => [
                 ['field' => 'patients.nom', 'isPersonalData' => true, 'category' => 'identity', 'sensitivity' => 'medium', 'confidence' => 0.95, 'justification' => 'Nom d\'un patient, journalisé dans src/patients.php.'],
                 ['field' => 'ville_reference.nom', 'isPersonalData' => false, 'category' => 'location', 'sensitivity' => 'low', 'confidence' => 0.9, 'justification' => 'Liste de référence des villes, sans lien avec une personne.'],
@@ -58,9 +59,15 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         $decisions = $arbitration->decisions;
 
         self::assertCount(2, $decisions);
-        self::assertSame([2, 2 * 1200, 2 * 80], [$arbitration->usage?->calls, $arbitration->usage?->inputTokens, $arbitration->usage?->outputTokens], 'Token usage is summed over the agent loop.');
-        self::assertIsArray($this->options[0]);
-        self::assertSame(4096, $this->options[0]['max_output_tokens'] ?? null, 'Every call caps the output.');
+        self::assertSame([3, 3 * 1200, 3 * 80], [$arbitration->usage?->calls, $arbitration->usage?->inputTokens, $arbitration->usage?->outputTokens], 'Token usage is summed over both agents.');
+        foreach ($this->options as $index => $options) {
+            self::assertIsArray($options);
+            self::assertSame(4096, $options['max_output_tokens'] ?? null, 'Every call caps the output.');
+            self::assertFalse(isset($options['tools']) && isset($options['response_format']), \sprintf('Call %d mixes "tools" and "response_format", which providers reject.', $index));
+        }
+        self::assertArrayHasKey('tools', self::array($this->options[0]), 'The investigation uses tools.');
+        self::assertArrayHasKey('response_format', self::array($this->options[2]), 'The verdicts are structured.');
+        self::assertStringContainsString("Investigator's conclusions", (string) json_encode($this->payloads[2]), 'The verdicts agent receives the investigation.');
         self::assertTrue($decisions[0]->personal);
         self::assertSame(DecisionSource::Agent, $decisions[0]->decidedBy);
         self::assertSame(0.95, $decisions[0]->confidence);
@@ -76,7 +83,7 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
 
     public function testACandidateWithoutVerdictFallsBackToTheHeuristic(): void
     {
-        $arbiter = $this->arbiter([new TextResult('{"verdicts": [{"field": "patients.nom", "isPersonalData": true, "category": "identity", "sensitivity": "medium", "confidence": 0.9, "justification": "Nom du patient."}]}')]);
+        $arbiter = $this->arbiter([new TextResult('patients.nom | personal data: yes'), new TextResult('{"verdicts": [{"field": "patients.nom", "isPersonalData": true, "category": "identity", "sensitivity": "medium", "confidence": 0.9, "justification": "Nom du patient."}]}')]);
 
         [$schema, $flows, $candidates] = $this->audit();
         $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates)->decisions;
@@ -120,7 +127,17 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         $session = new AuditSession(new PiiMasker());
         $toolbox = new Toolbox([new DescribeTableTool($session), new FindColumnUsagesTool($session), new ReadCodeSnippetTool($session)]);
 
-        return new SymfonyAiCandidateArbiter(new Agent($platform, 'test-model', toolbox: $toolbox), $session);
+        return new SymfonyAiCandidateArbiter(new Agent($platform, 'test-model', toolbox: $toolbox), new Agent($platform, 'test-model'), $session);
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private static function array(mixed $value): array
+    {
+        self::assertIsArray($value);
+
+        return $value;
     }
 
     /**

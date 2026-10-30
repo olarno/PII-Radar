@@ -51,7 +51,7 @@ final class ProviderErrorReportingTest extends TestCase
         $platform = Factory::createPlatform('hf_test', httpClient: $http, eventDispatcher: $dispatcher);
 
         $session = new AuditSession(new PiiMasker());
-        $arbiter = new SymfonyAiCandidateArbiter(new Agent($platform, 'openai/gpt-oss-120b'), $session, $http);
+        $arbiter = new SymfonyAiCandidateArbiter(new Agent($platform, 'openai/gpt-oss-120b'), new Agent($platform, 'openai/gpt-oss-120b'), $session, $http);
 
         $schema = new SqlDumpSchemaReader()->read(self::PROJECT);
         $classifier = new ColumnNameClassifier();
