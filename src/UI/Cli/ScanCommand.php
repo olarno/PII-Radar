@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\UI\Cli;
 
 use App\Application\ScanProject;
+use App\Domain\Finding\Finding;
 use App\Domain\Flow\FlowPoint;
 use App\Domain\Pii\PiiCandidate;
 use App\Domain\Schema\FieldReference;
@@ -47,6 +48,16 @@ final readonly class ScanCommand
         if ('json' === $format) {
             $io->writeln(json_encode([
                 'schema' => ['tables' => $tableCount, 'columns' => $columnCount],
+                'findings' => array_map(static fn (Finding $finding): array => [
+                    'rule' => $finding->rule,
+                    'severity' => $finding->severity->value,
+                    'location' => ['file' => $finding->location->file, 'line' => $finding->location->line],
+                    'fields' => self::names($finding->fields),
+                    'summary' => $finding->summary,
+                    'remediation' => $finding->remediation,
+                    'recipient' => $finding->recipient,
+                    'jurisdiction' => $finding->jurisdiction,
+                ], $report->findings),
                 'candidates' => array_map(static fn (PiiCandidate $candidate): array => [
                     'field' => (string) $candidate->column->reference,
                     'type' => $candidate->column->type,
@@ -69,6 +80,19 @@ final readonly class ScanCommand
         }
 
         $io->title('PII Radar');
+
+        $io->section('Findings');
+        $io->text(\sprintf('%d findings.', \count($report->findings)));
+        $io->table(
+            ['Règle', 'Sévérité', 'Emplacement', 'Constat', 'Correctif'],
+            array_map(static fn (Finding $finding): array => [
+                $finding->rule,
+                $finding->severity->label(),
+                (string) $finding->location,
+                wordwrap($finding->summary, 60),
+                wordwrap($finding->remediation, 50),
+            ], $report->findings),
+        );
 
         $io->section('Schéma');
         $io->text(\sprintf('%d tables, %d colonnes lues. %d colonnes candidates.', $tableCount, $columnCount, \count($report->candidates)));

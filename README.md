@@ -10,7 +10,7 @@ Construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le
 
 ## État
 
-🚧 Étape 2 en cours : `pii:scan` lit le schéma SQL, liste les colonnes candidates et suit leurs flux dans le code PHP (collecte, stockage, journaux, envois, hachage). Les règles PII-001 à PII-008 arrivent ensuite.
+🚧 Scan déterministe terminé : `pii:scan` lit le schéma SQL et le code PHP, suit les flux de données personnelles et applique les règles PII-001 à PII-008. Prochaine étape : l'agent Symfony AI qui confirme les candidats et rédige.
 
 ## Démarrage
 
@@ -31,6 +31,8 @@ APP_PORT=8090 LEGACY_APP_PORT=8091 docker compose up -d
 ```
 
 ### Scanner l'appli de démo
+
+Le scan affiche les findings (règle, sévérité, emplacement, correctif), puis les colonnes candidates et les flux dans le code.
 
 ```bash
 docker compose exec app bin/console pii:scan demo/legacy-app
