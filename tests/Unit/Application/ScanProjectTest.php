@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Application;
 
+use App\Application\AgentUsage;
+use App\Application\Port\Arbitration;
 use App\Application\Port\CandidateArbiter;
 use App\Application\ScanProject;
 use App\Domain\Pii\ClassifiedField;
@@ -28,6 +30,7 @@ final class ScanProjectTest extends TestCase
 
         self::assertSame(['patients.nom', 'ville_reference.nom'], $arbiter->received, 'courriel (0.9) is decided by the rules.');
         self::assertTrue($report->arbitrated);
+        self::assertSame(9000, $report->agentUsage?->inputTokens);
 
         $decided = [];
         foreach ($report->classifiedFields as $field) {
@@ -84,11 +87,11 @@ final class RecordingArbiter implements CandidateArbiter
     /** @var list<string> */
     public array $received = [];
 
-    public function arbitrate(string $projectPath, Schema $schema, array $flows, array $candidates): array
+    public function arbitrate(string $projectPath, Schema $schema, array $flows, array $candidates): Arbitration
     {
         $this->received = array_map(static fn (PiiCandidate $candidate): string => (string) $candidate->column->reference, $candidates);
 
-        return array_map(static fn (PiiCandidate $candidate): ClassifiedField => new ClassifiedField(
+        return new Arbitration(array_map(static fn (PiiCandidate $candidate): ClassifiedField => new ClassifiedField(
             $candidate->column,
             !str_ends_with($candidate->column->reference->table, '_reference'),
             $candidate->category,
@@ -96,6 +99,6 @@ final class RecordingArbiter implements CandidateArbiter
             0.9,
             'Décision de test.',
             DecisionSource::Agent,
-        ), $candidates);
+        ), $candidates), new AgentUsage(3, 9000, 400));
     }
 }

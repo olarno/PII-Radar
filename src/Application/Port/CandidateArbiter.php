@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Application\Port;
 
 use App\Domain\Flow\FlowPoint;
-use App\Domain\Pii\ClassifiedField;
 use App\Domain\Pii\PiiCandidate;
 use App\Domain\Schema\Schema;
 
@@ -17,9 +16,9 @@ interface CandidateArbiter
      * @param list<PiiCandidate> $candidates
      * @param list<FlowPoint>    $flows
      *
-     * @return list<ClassifiedField> one per candidate, in any order
+     * @return Arbitration one decision per candidate, in any order, and what the arbitration cost
      *
      * @throws ArbitrationFailed
      */
-    public function arbitrate(string $projectPath, Schema $schema, array $flows, array $candidates): array;
+    public function arbitrate(string $projectPath, Schema $schema, array $flows, array $candidates): Arbitration;
 }

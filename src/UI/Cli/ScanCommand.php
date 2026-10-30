@@ -56,6 +56,11 @@ final readonly class ScanCommand
             $io->writeln(json_encode([
                 'schema' => ['tables' => $tableCount, 'columns' => $columnCount],
                 'arbitrated' => $report->arbitrated,
+                'agent_usage' => null === $report->agentUsage ? null : [
+                    'calls' => $report->agentUsage->calls,
+                    'input_tokens' => $report->agentUsage->inputTokens,
+                    'output_tokens' => $report->agentUsage->outputTokens,
+                ],
                 'findings' => array_map(static fn (Finding $finding): array => [
                     'rule' => $finding->rule,
                     'severity' => $finding->severity->value,
@@ -144,6 +149,15 @@ final readonly class ScanCommand
                 implode("\n", self::names($flow->concatenatedFields)),
             ], $report->flows),
         );
+
+        if (null !== $report->agentUsage) {
+            $io->note(\sprintf(
+                'Agent : %d appel(s) au modèle, %s tokens en entrée, %s en sortie.',
+                $report->agentUsage->calls,
+                null === $report->agentUsage->inputTokens ? '?' : number_format($report->agentUsage->inputTokens, 0, ',', ' '),
+                null === $report->agentUsage->outputTokens ? '?' : number_format($report->agentUsage->outputTokens, 0, ',', ' '),
+            ));
+        }
 
         return Command::SUCCESS;
     }

@@ -18,6 +18,7 @@ final readonly class ScanReport
      * @param list<FlowPoint>       $flows
      * @param list<Finding>         $findings         most severe first
      * @param bool                  $arbitrated       whether the agent arbitrated the ambiguous candidates
+     * @param ?AgentUsage           $agentUsage       what the arbitration cost, when the platform reports it
      */
     public function __construct(
         public Schema $schema,
@@ -26,6 +27,7 @@ final readonly class ScanReport
         public array $flows,
         public array $findings,
         public bool $arbitrated,
+        public ?AgentUsage $agentUsage = null,
     ) {
     }
 }

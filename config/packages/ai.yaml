@@ -18,7 +18,8 @@ ai:
                     - { service: App\Infrastructure\Ai\Tool\FindColumnUsagesTool }
                     - { service: App\Infrastructure\Ai\Tool\ReadCodeSnippetTool }
             fault_tolerant_toolbox: true
-            max_tool_calls: 20
+            # Budget guard: 4 candidates on the demo need far fewer calls.
+            max_tool_calls: 12
 
 when@test:
     ai:

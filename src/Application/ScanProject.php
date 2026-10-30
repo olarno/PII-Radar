@@ -60,10 +60,13 @@ final readonly class ScanProject
             $decisions[(string) $candidate->column->reference] = ClassifiedField::fromCandidate($candidate);
         }
         $arbitrated = $arbitrate && [] !== $ambiguous;
+        $usage = null;
         if ($arbitrated) {
-            foreach ($this->arbiter->arbitrate($projectPath, $schema, $flows, $ambiguous) as $decision) {
+            $arbitration = $this->arbiter->arbitrate($projectPath, $schema, $flows, $ambiguous);
+            foreach ($arbitration->decisions as $decision) {
                 $decisions[(string) $decision->column->reference] = $decision;
             }
+            $usage = $arbitration->usage;
         }
         $classified = array_values($decisions);
 
@@ -75,6 +78,6 @@ final readonly class ScanProject
         usort($findings, static fn (Finding $a, Finding $b): int => [$b->severity->weight(), $a->rule, $a->location->file, $a->location->line]
             <=> [$a->severity->weight(), $b->rule, $b->location->file, $b->location->line]);
 
-        return new ScanReport($schema, $candidates, $classified, $flows, $findings, $arbitrated);
+        return new ScanReport($schema, $candidates, $classified, $flows, $findings, $arbitrated, $usage);
     }
 }

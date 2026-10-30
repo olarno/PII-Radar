@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Ai;
 
+use App\Application\AgentUsage;
+use App\Application\Port\Arbitration;
 use App\Application\Port\ArbitrationFailed;
 use App\Application\Port\CandidateArbiter;
 use App\Domain\Pii\ClassifiedField;
@@ -16,6 +18,9 @@ use App\Domain\Schema\Table;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
+use Symfony\AI\Platform\PlatformOptions;
+use Symfony\AI\Platform\TokenUsage\TokenUsageAggregation;
+use Symfony\AI\Platform\TokenUsage\TokenUsageInterface;
 
 /**
  * Asks the "arbiter" agent (config/packages/ai.yaml) to confirm or reject ambiguous candidates.
@@ -24,23 +29,29 @@ use Symfony\AI\Platform\Message\MessageBag;
  */
 final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
 {
+    /** Caps each answer of the model; leaves room for the reasoning of models such as gpt-oss. */
+    private const int MAX_OUTPUT_TOKENS = 4096;
+
     public function __construct(
         private AgentInterface $arbiter,
         private AuditSession $session,
     ) {
     }
 
-    public function arbitrate(string $projectPath, Schema $schema, array $flows, array $candidates): array
+    public function arbitrate(string $projectPath, Schema $schema, array $flows, array $candidates): Arbitration
     {
         if ([] === $candidates) {
-            return [];
+            return new Arbitration([]);
         }
 
         $this->session->start($projectPath, $schema, $flows);
         try {
-            $result = $this->arbiter
-                ->call(new MessageBag(Message::ofUser(self::prompt($schema, $candidates))), ['response_format' => ArbitrationResult::class])
-                ->asObject(ArbitrationResult::class);
+            $execution = $this->arbiter->call(
+                new MessageBag(Message::ofUser(self::prompt($schema, $candidates))),
+                ['response_format' => ArbitrationResult::class, PlatformOptions::MAX_OUTPUT_TOKENS => self::MAX_OUTPUT_TOKENS],
+            );
+            $result = $execution->asObject(ArbitrationResult::class);
+            $usage = self::usage($execution->getResult()->getMetadata()->get('token_usage'));
         } catch (\Throwable $exception) {
             throw new ArbitrationFailed(\sprintf('L\'agent n\'a pas pu arbitrer les candidats : %s', $exception->getMessage()), previous: $exception);
         } finally {
@@ -51,7 +62,7 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
             $verdicts[trim($verdict->field)] = $verdict;
         }
 
-        return array_map(static fn (PiiCandidate $candidate): ClassifiedField => isset($verdicts[(string) $candidate->column->reference])
+        return new Arbitration(array_map(static fn (PiiCandidate $candidate): ClassifiedField => isset($verdicts[(string) $candidate->column->reference])
             ? self::decision($candidate, $verdicts[(string) $candidate->column->reference])
             : new ClassifiedField(
                 $candidate->column,
@@ -61,7 +72,16 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
                 $candidate->confidence,
                 'L\'agent n\'a pas rendu de verdict : décision de l\'heuristique. '.$candidate->reason,
                 DecisionSource::Rules,
-            ), $candidates);
+            ), $candidates), $usage);
+    }
+
+    private static function usage(mixed $tokenUsage): ?AgentUsage
+    {
+        return match (true) {
+            $tokenUsage instanceof TokenUsageAggregation => new AgentUsage($tokenUsage->count(), $tokenUsage->getPromptTokens(), $tokenUsage->getCompletionTokens()),
+            $tokenUsage instanceof TokenUsageInterface => new AgentUsage(1, $tokenUsage->getPromptTokens(), $tokenUsage->getCompletionTokens()),
+            default => null,
+        };
     }
 
     private static function decision(PiiCandidate $candidate, FieldVerdict $verdict): ClassifiedField

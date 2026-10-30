@@ -27,6 +27,7 @@ use Symfony\AI\Platform\Result\ToolCall;
 use Symfony\AI\Platform\Result\ToolCallResult;
 use Symfony\AI\Platform\StructuredOutput\PlatformSubscriber;
 use Symfony\AI\Platform\Test\MockPlatformFactory;
+use Symfony\AI\Platform\TokenUsage\TokenUsage;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -39,6 +40,9 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
     /** @var list<mixed> payloads sent to the model */
     private array $payloads = [];
 
+    /** @var list<mixed> options of each call to the model */
+    private array $options = [];
+
     public function testTheAgentUsesItsToolsAndItsVerdictsBecomeDecisions(): void
     {
         $arbiter = $this->arbiter([
@@ -50,9 +54,13 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         ]);
 
         [$schema, $flows, $candidates] = $this->audit();
-        $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates);
+        $arbitration = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates);
+        $decisions = $arbitration->decisions;
 
         self::assertCount(2, $decisions);
+        self::assertSame([2, 2 * 1200, 2 * 80], [$arbitration->usage?->calls, $arbitration->usage?->inputTokens, $arbitration->usage?->outputTokens], 'Token usage is summed over the agent loop.');
+        self::assertIsArray($this->options[0]);
+        self::assertSame(4096, $this->options[0]['max_output_tokens'] ?? null, 'Every call caps the output.');
         self::assertTrue($decisions[0]->personal);
         self::assertSame(DecisionSource::Agent, $decisions[0]->decidedBy);
         self::assertSame(0.95, $decisions[0]->confidence);
@@ -71,7 +79,7 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         $arbiter = $this->arbiter([new TextResult('{"verdicts": [{"field": "patients.nom", "isPersonalData": true, "category": "identity", "sensitivity": "medium", "confidence": 0.9, "justification": "Nom du patient."}]}')]);
 
         [$schema, $flows, $candidates] = $this->audit();
-        $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates);
+        $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates)->decisions;
 
         self::assertSame(DecisionSource::Rules, $decisions[1]->decidedBy);
         self::assertStringContainsString('pas rendu de verdict', $decisions[1]->justification);
@@ -98,10 +106,13 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
 
         $calls = 0;
         $platform = MockPlatformFactory::createPlatform(
-            $script instanceof \Closure ? $script : function ($model, $input) use ($script, &$calls) {
+            $script instanceof \Closure ? $script : function ($model, $input, $options) use ($script, &$calls) {
                 $this->payloads[] = $input;
+                $this->options[] = $options;
+                $result = $script[$calls++] ?? new TextResult('{"verdicts": []}');
+                $result->getMetadata()->add('token_usage', new TokenUsage(promptTokens: 1200, completionTokens: 80, totalTokens: 1280));
 
-                return $script[$calls++] ?? new TextResult('{"verdicts": []}');
+                return $result;
             },
             eventDispatcher: $dispatcher,
         );
