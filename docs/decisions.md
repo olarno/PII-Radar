@@ -1,6 +1,6 @@
 # Décisions de cadrage
 
-Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'étape 1, 11 à 13 à l'étape 2c), en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
+Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'étape 1, 11 à 13 à l'étape 2c, 14 et 15 à l'étape 3a), en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
 
 | # | Sujet | Décision | Conséquence |
 |---|---|---|---|
@@ -17,6 +17,8 @@ Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'éta
 | 11 | Place des règles | Les règles PII-001 à PII-008 vivent dans `src/Domain/Rule` (et non `Infrastructure/Rule` comme dans le doc de cadrage). | Ce sont des fonctions pures sur le schéma, les flux et les fichiers exposés : testables sans framework ni fichiers. |
 | 12 | Seuil de confiance | Une colonne ne déclenche une règle que si sa confiance PII atteint 0,5. | `email_template` (0,27) ne déclenche rien. `ville_reference.nom` (0,6) déclenche encore PII-006 : l'agent l'écartera à l'étape suivante. Le test de bout en bout tolère ce cas, et seulement lui. |
 | 13 | Hors Québec | Pour PII-008, le reste du Canada est aussi « hors Québec » (Loi 25, art. 17). Un hôte absent de la table donne un finding de sévérité faible, « juridiction à confirmer ». | Aucune communication n'est supposée locale par défaut. |
+| 14 | Ce que le LLM arbitre | Les candidats à 0,8 de confiance ou plus sont décidés par les règles ; les autres sont arbitrés par l'agent `arbiter` (Symfony AI, Hugging Face). Le modèle par défaut est `openai/gpt-oss-120b`, configurable via `PII_RADAR_MODEL`. | Peu d'appels au LLM, uniquement sur les cas ambigus. Le prompt ne contient que des métadonnées ; les extraits de code passent par `PiiMasker`. |
+| 15 | Tests de l'agent | Les tests unitaires utilisent la plateforme scriptée de Symfony AI. Le test de bout en bout rejoue une cassette d'un vrai appel Hugging Face (`CassetteHttpClient`), enregistrée une fois. | La CI teste les vraies réponses du modèle, sans clé ni réseau. Changer le prompt, les outils ou la démo oblige à réenregistrer la cassette. |
 
 ## Versions verrouillées (jour 1)
 

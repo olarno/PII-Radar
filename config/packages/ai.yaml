@@ -1,7 +1,28 @@
-# Symfony AI: every LLM and NER call goes through the Platform component.
-# Hugging Face Inference Providers is the default platform; the agents
-# (field classification, register drafting) are wired in step 4.
+# Symfony AI: every LLM call goes through the Platform component.
+# Hugging Face Inference Providers is the default platform (decision 2).
 ai:
     platform:
         huggingface:
             api_key: '%env(HUGGINGFACE_API_KEY)%'
+
+    agent:
+        # Confirms or rejects the candidates the name heuristic is unsure about.
+        arbiter:
+            platform: 'ai.platform.huggingface'
+            model: '%env(PII_RADAR_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/config/prompts/arbiter.md'
+            tools:
+                services:
+                    - { service: App\Infrastructure\Ai\Tool\DescribeTableTool }
+                    - { service: App\Infrastructure\Ai\Tool\FindColumnUsagesTool }
+                    - { service: App\Infrastructure\Ai\Tool\ReadCodeSnippetTool }
+            fault_tolerant_toolbox: true
+            max_tool_calls: 20
+
+when@test:
+    ai:
+        platform:
+            huggingface:
+                # Replays the recorded Hugging Face exchanges of tests/Fixtures/cassettes (records them when missing).
+                http_client: 'pii_radar.test.cassette_http_client'

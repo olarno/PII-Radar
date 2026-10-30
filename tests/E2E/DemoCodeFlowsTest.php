@@ -86,7 +86,7 @@ final class DemoCodeFlowsTest extends KernelTestCase
     {
         if (null === self::$flows) {
             $scan = self::getContainer()->get(ScanProject::class);
-            self::$flows = $scan(__DIR__.'/../../demo/legacy-app')->flows;
+            self::$flows = $scan(__DIR__.'/../../demo/legacy-app', arbitrate: false)->flows;
         }
 
         return self::$flows;

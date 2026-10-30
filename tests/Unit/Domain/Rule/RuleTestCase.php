@@ -8,6 +8,7 @@ use App\Domain\DataFile;
 use App\Domain\Finding\Finding;
 use App\Domain\Flow\FlowOperation;
 use App\Domain\Flow\FlowPoint;
+use App\Domain\Pii\ClassifiedField;
 use App\Domain\Pii\ColumnNameClassifier;
 use App\Domain\Pii\PiiCandidate;
 use App\Domain\Rule\AuditContext;
@@ -39,7 +40,7 @@ abstract class RuleTestCase extends TestCase
         $classifier = new ColumnNameClassifier();
         $candidates = array_values(array_filter(array_map($classifier->classify(...), $table->columns), static fn (?PiiCandidate $candidate): bool => null !== $candidate));
 
-        return new AuditContext(new Schema([$table]), $candidates, $flows, $dataFiles);
+        return new AuditContext(new Schema([$table]), array_map(ClassifiedField::fromCandidate(...), $candidates), $flows, $dataFiles);
     }
 
     /**
