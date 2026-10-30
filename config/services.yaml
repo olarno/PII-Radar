@@ -5,6 +5,10 @@ services:
         autowire: true
         autoconfigure: true
 
+    _instanceof:
+        App\Domain\Rule\Rule:
+            tags: ['pii_radar.rule']
+
     App\:
         resource: '../src/'
         exclude:
@@ -13,3 +17,10 @@ services:
 
     # Domain services are plain PHP, registered explicitly.
     App\Domain\Pii\ColumnNameClassifier: ~
+    App\Domain\Rule\HostJurisdictions: ~
+    App\Domain\Rule\:
+        resource: '../src/Domain/Rule/*Rule.php'
+
+    App\Application\ScanProject:
+        arguments:
+            $rules: !tagged_iterator pii_radar.rule

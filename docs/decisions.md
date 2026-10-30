@@ -1,6 +1,6 @@
 # Décisions de cadrage
 
-Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'étape 1), en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
+Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'étape 1, 11 à 13 à l'étape 2c), en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
 
 | # | Sujet | Décision | Conséquence |
 |---|---|---|---|
@@ -14,6 +14,9 @@ Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'éta
 | 8 | Appli de démo | Clinique Bonsoir est un faux back-office : les pages s'affichent et lisent la base, sans viser une appli complète. | Crédible à l'écran pour la vidéo, sans y passer de temps. |
 | 9 | API SMS de la démo | `rappel.php` appelle Twilio (`api.twilio.com`), que la table des juridictions de PII-008 reconnaît comme américain. | La démo n'appelle jamais réellement Twilio (identifiants absents). |
 | 10 | Pièges à faux positifs | Ceux du doc de cadrage : `parametres_courriel.email_template` et la table `ville_reference`. | Listés dans `not_pii` de `expected-findings.json`. |
+| 11 | Place des règles | Les règles PII-001 à PII-008 vivent dans `src/Domain/Rule` (et non `Infrastructure/Rule` comme dans le doc de cadrage). | Ce sont des fonctions pures sur le schéma, les flux et les fichiers exposés : testables sans framework ni fichiers. |
+| 12 | Seuil de confiance | Une colonne ne déclenche une règle que si sa confiance PII atteint 0,5. | `email_template` (0,27) ne déclenche rien. `ville_reference.nom` (0,6) déclenche encore PII-006 : l'agent l'écartera à l'étape suivante. Le test de bout en bout tolère ce cas, et seulement lui. |
+| 13 | Hors Québec | Pour PII-008, le reste du Canada est aussi « hors Québec » (Loi 25, art. 17). Un hôte absent de la table donne un finding de sévérité faible, « juridiction à confirmer ». | Aucune communication n'est supposée locale par défaut. |
 
 ## Versions verrouillées (jour 1)
 
