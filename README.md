@@ -10,7 +10,7 @@ Construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le
 
 ## État
 
-🚧 Scan déterministe terminé : `pii:scan` lit le schéma SQL et le code PHP, suit les flux de données personnelles et applique les règles PII-001 à PII-008. Prochaine étape : l'agent Symfony AI qui confirme les candidats et rédige.
+🚧 L'agent Symfony AI arbitre les colonnes ambiguës (données personnelles ou non) avec ses outils, sans jamais voir de valeur. Prochaine étape : serveur MCP, registre Loi 25 et rapport web.
 
 ## Démarrage
 
@@ -32,7 +32,9 @@ APP_PORT=8090 LEGACY_APP_PORT=8091 docker compose up -d
 
 ### Scanner l'appli de démo
 
-Le scan affiche les findings (règle, sévérité, emplacement, correctif), puis les colonnes candidates et les flux dans le code.
+Le scan affiche les findings (règle, sévérité, emplacement, correctif), puis les données personnelles (avec qui a décidé et pourquoi) et les flux dans le code.
+
+Les colonnes ambiguës sont arbitrées par un agent Symfony AI sur Hugging Face : il faut un token (`HUGGINGFACE_API_KEY` dans `.env.local`). Sans token, `--no-ai` lance un scan déterministe, où l'heuristique décide seule.
 
 ```bash
 docker compose exec app bin/console pii:scan demo/legacy-app
@@ -56,6 +58,13 @@ docker compose exec app bin/console pii:scan demo/legacy-app --format=json
 
 ```bash
 composer qa        # CS-Fixer, PHPStan (niveau max), Deptrac, PHPUnit
+```
+
+Les tests n'ont besoin d'aucune clé : le test de bout en bout de l'agent rejoue une cassette d'un vrai appel Hugging Face. Pour la réenregistrer après une modification du prompt, des outils ou de la démo :
+
+```bash
+rm tests/Fixtures/cassettes/demo-arbitration.json
+docker compose exec -e HUGGINGFACE_API_KEY=hf_... app vendor/bin/phpunit tests/E2E/DemoArbitrationTest.php
 ```
 
 L'architecture suit des couches propres, vérifiées par Deptrac : `Domain` (aucune dépendance) ← `Application` ← `Infrastructure` ← `UI`. Les décisions de cadrage sont dans [`docs/decisions.md`](docs/decisions.md).

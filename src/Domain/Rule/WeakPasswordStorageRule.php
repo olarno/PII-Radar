@@ -7,7 +7,7 @@ namespace App\Domain\Rule;
 use App\Domain\Finding\Finding;
 use App\Domain\Finding\Severity;
 use App\Domain\Flow\FlowOperation;
-use App\Domain\Pii\PiiCandidate;
+use App\Domain\Pii\ClassifiedField;
 use App\Domain\Pii\PiiCategory;
 use App\Domain\Pii\Sensitivity;
 use App\Domain\Schema\FieldReference;
@@ -82,7 +82,7 @@ final class WeakPasswordStorageRule implements Rule
         return array_values(array_filter($fields, static function (FieldReference $field) use ($context): bool {
             $candidate = $context->personalDataFor($field);
 
-            return $candidate instanceof PiiCandidate && PiiCategory::Technical === $candidate->category && Sensitivity::High === $candidate->sensitivity;
+            return $candidate instanceof ClassifiedField && PiiCategory::Technical === $candidate->category && Sensitivity::High === $candidate->sensitivity;
         }));
     }
 }

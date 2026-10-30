@@ -17,6 +17,7 @@ services:
 
     # Domain services are plain PHP, registered explicitly.
     App\Domain\Pii\ColumnNameClassifier: ~
+    App\Domain\Pii\PiiMasker: ~
     App\Domain\Rule\HostJurisdictions: ~
     App\Domain\Rule\:
         resource: '../src/Domain/Rule/*Rule.php'

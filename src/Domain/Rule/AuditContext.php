@@ -7,7 +7,7 @@ namespace App\Domain\Rule;
 use App\Domain\DataFile;
 use App\Domain\Flow\FlowOperation;
 use App\Domain\Flow\FlowPoint;
-use App\Domain\Pii\PiiCandidate;
+use App\Domain\Pii\ClassifiedField;
 use App\Domain\Pii\Sensitivity;
 use App\Domain\Schema\FieldReference;
 use App\Domain\Schema\Schema;
@@ -17,41 +17,38 @@ use App\Domain\Schema\Schema;
  */
 final readonly class AuditContext
 {
-    /** Below this confidence a candidate is too doubtful to raise a finding on its own. */
-    public const float PII_CONFIDENCE_THRESHOLD = 0.5;
-
-    /** @var array<string, PiiCandidate> */
+    /** @var array<string, ClassifiedField> */
     private array $pii;
 
     /**
-     * @param list<PiiCandidate> $candidates
-     * @param list<FlowPoint>    $flows
-     * @param list<DataFile>     $dataFiles
+     * @param list<ClassifiedField> $classifiedFields
+     * @param list<FlowPoint>       $flows
+     * @param list<DataFile>        $dataFiles
      */
     public function __construct(
         public Schema $schema,
-        array $candidates,
+        array $classifiedFields,
         public array $flows,
         public array $dataFiles = [],
     ) {
         $pii = [];
-        foreach ($candidates as $candidate) {
-            if ($candidate->confidence >= self::PII_CONFIDENCE_THRESHOLD) {
-                $pii[(string) $candidate->column->reference] = $candidate;
+        foreach ($classifiedFields as $field) {
+            if ($field->personal) {
+                $pii[(string) $field->column->reference] = $field;
             }
         }
         $this->pii = $pii;
     }
 
     /**
-     * @return list<PiiCandidate>
+     * @return list<ClassifiedField> the fields classified as personal data
      */
     public function personalData(): array
     {
         return array_values($this->pii);
     }
 
-    public function personalDataFor(FieldReference $field): ?PiiCandidate
+    public function personalDataFor(FieldReference $field): ?ClassifiedField
     {
         return $this->pii[(string) $field] ?? null;
     }

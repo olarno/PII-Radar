@@ -14,7 +14,7 @@ final class ScanCommandTest extends KernelTestCase
     public function testPrintsCandidatesAsJson(): void
     {
         $tester = $this->tester();
-        $tester->execute(['path' => __DIR__.'/../../../demo/legacy-app', '--format' => 'json']);
+        $tester->execute(['path' => __DIR__.'/../../../demo/legacy-app', '--format' => 'json', '--no-ai' => true]);
 
         $tester->assertCommandIsSuccessful();
         $output = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
@@ -40,7 +40,7 @@ final class ScanCommandTest extends KernelTestCase
     public function testPrintsATableByDefault(): void
     {
         $tester = $this->tester();
-        $tester->execute(['path' => __DIR__.'/../../../demo/legacy-app']);
+        $tester->execute(['path' => __DIR__.'/../../../demo/legacy-app', '--no-ai' => true]);
 
         $tester->assertCommandIsSuccessful();
         self::assertStringContainsString('patients.nam', $tester->getDisplay());

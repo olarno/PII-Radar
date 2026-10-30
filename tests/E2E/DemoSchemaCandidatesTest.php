@@ -54,7 +54,7 @@ final class DemoSchemaCandidatesTest extends KernelTestCase
         $detect = self::getContainer()->get(ScanProject::class);
 
         $indexed = [];
-        foreach ($detect(self::DEMO_DIR)->candidates as $candidate) {
+        foreach ($detect(self::DEMO_DIR, arbitrate: false)->candidates as $candidate) {
             $indexed[(string) $candidate->column->reference] = $candidate;
         }
 
