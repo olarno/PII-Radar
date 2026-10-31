@@ -61,6 +61,7 @@ final readonly class ScanProject
         }
         $arbitrated = $arbitrate && [] !== $ambiguous;
         $usage = null;
+        $arbitration = null;
         if ($arbitrated) {
             $arbitration = $this->arbiter->arbitrate($projectPath, $schema, $flows, $ambiguous);
             foreach ($arbitration->decisions as $decision) {
@@ -78,6 +79,6 @@ final readonly class ScanProject
         usort($findings, static fn (Finding $a, Finding $b): int => [$b->severity->weight(), $a->rule, $a->location->file, $a->location->line]
             <=> [$a->severity->weight(), $b->rule, $b->location->file, $b->location->line]);
 
-        return new ScanReport($schema, $candidates, $classified, $flows, $findings, $arbitrated, $usage);
+        return new ScanReport($schema, $candidates, $classified, $flows, $findings, $arbitrated, $usage, $arbitration);
     }
 }

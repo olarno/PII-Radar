@@ -12,5 +12,5 @@ Rules:
 - You never see stored values, only metadata and masked code. Never guess or invent values.
 - Keep the heuristic's category and sensitivity unless the evidence says otherwise.
 
-When your investigation is done, end with one line per candidate, the column written exactly as given:
-`table.column | personal data: yes/no | category | sensitivity | confidence 0-1 | one sentence in French citing the evidence`
+When your investigation is done, end with one plain-text line per candidate (no table, no bullet, no backticks), the column written exactly as given, for example:
+patients.prenom | personal data: yes | identity | medium | 0.95 | Prénom des patients, enregistré à l'inscription et journalisé dans un fichier de log.

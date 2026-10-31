@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application;
 
+use App\Application\Port\Arbitration;
 use App\Domain\Finding\Finding;
 use App\Domain\Flow\FlowPoint;
 use App\Domain\Pii\ClassifiedField;
@@ -19,6 +20,7 @@ final readonly class ScanReport
      * @param list<Finding>         $findings         most severe first
      * @param bool                  $arbitrated       whether the agent arbitrated the ambiguous candidates
      * @param ?AgentUsage           $agentUsage       what the arbitration cost, when the platform reports it
+     * @param ?Arbitration          $arbitration      the agent's raw output, for diagnosis
      */
     public function __construct(
         public Schema $schema,
@@ -28,6 +30,7 @@ final readonly class ScanReport
         public array $findings,
         public bool $arbitrated,
         public ?AgentUsage $agentUsage = null,
+        public ?Arbitration $arbitration = null,
     ) {
     }
 }

@@ -92,6 +92,39 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         self::assertStringContainsString('pas rendu de verdict', $decisions[1]->justification);
     }
 
+    public function testVerdictFieldsAreMatchedLooselyButNeverAmbiguously(): void
+    {
+        $arbiter = $this->arbiter([
+            new TextResult('Enquête terminée.'),
+            new TextResult('{"verdicts": [{"field": "`Patients.Nom`", "isPersonalData": true, "category": "identity", "sensitivity": "medium", "confidence": 0.9, "justification": "Nom du patient."}, {"field": "nom", "isPersonalData": false, "category": "location", "sensitivity": "low", "confidence": 0.9, "justification": "Ambigu."}]}'),
+        ]);
+
+        [$schema, $flows, $candidates] = $this->audit();
+        $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates)->decisions;
+
+        self::assertSame(DecisionSource::Agent, $decisions[0]->decidedBy, 'Backticks and case are ignored.');
+        self::assertSame(DecisionSource::Rules, $decisions[1]->decidedBy, 'A bare "nom" names two candidates: it is not used.');
+    }
+
+    public function testTheWrittenConclusionsBackUpMissingVerdicts(): void
+    {
+        $arbiter = $this->arbiter([
+            new TextResult("Analyse faite.\n\n- `ville_reference.nom | personal data: no | location | low | 0.92 | Référentiel de villes utilisé pour un menu déroulant.`\npatients.nom | personal data: yes | identity | medium | confidence 0.9 | Nom des patients, journalisé."),
+            new TextResult('{"verdicts": []}'),
+        ]);
+
+        [$schema, $flows, $candidates] = $this->audit();
+        $arbitration = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates);
+
+        self::assertTrue($arbitration->decisions[0]->personal);
+        self::assertFalse($arbitration->decisions[1]->personal);
+        self::assertSame(DecisionSource::Agent, $arbitration->decisions[1]->decidedBy);
+        self::assertSame(0.92, $arbitration->decisions[1]->confidence);
+        self::assertSame('Référentiel de villes utilisé pour un menu déroulant.', $arbitration->decisions[1]->justification);
+        self::assertStringContainsString('Analyse faite.', (string) $arbitration->conclusions);
+        self::assertSame([], $arbitration->rawVerdicts);
+    }
+
     public function testPlatformErrorsBecomeArbitrationFailures(): void
     {
         $arbiter = $this->arbiter(static fn () => throw new \RuntimeException('401 Unauthorized'));

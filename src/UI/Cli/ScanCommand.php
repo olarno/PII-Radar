@@ -155,6 +155,13 @@ final readonly class ScanCommand
             ], $report->flows),
         );
 
+        if (null !== $report->arbitration && $io->isVerbose()) {
+            $io->section('Agent : conclusions de l\'enquête');
+            $io->text('' === (string) $report->arbitration->conclusions ? '(aucune conclusion écrite)' : (string) $report->arbitration->conclusions);
+            $io->section('Agent : verdicts structurés reçus');
+            $io->listing([] === $report->arbitration->rawVerdicts ? ['(aucun verdict)'] : $report->arbitration->rawVerdicts);
+        }
+
         if (null !== $report->agentUsage) {
             $io->note(\sprintf(
                 'Agent : %d appel(s) au modèle, %s tokens en entrée, %s en sortie.',

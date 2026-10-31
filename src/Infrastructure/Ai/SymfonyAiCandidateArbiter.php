@@ -71,22 +71,69 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
         } finally {
             $this->session->end();
         }
-        $verdicts = [];
+        $byField = [];
+        $byColumn = [];
         foreach ($result->verdicts as $verdict) {
-            $verdicts[trim($verdict->field)] = $verdict;
+            $byField[self::normalize($verdict->field)] = $verdict;
+            $byColumn[self::normalize((string) preg_replace('/^.*\./', '', $verdict->field))][] = $verdict;
+        }
+        $written = self::writtenConclusions($conclusions);
+
+        $decisions = [];
+        foreach ($candidates as $candidate) {
+            $reference = self::normalize((string) $candidate->column->reference);
+            $column = self::normalize($candidate->column->name());
+            // An unambiguous bare column name ("motif") is accepted too.
+            $verdict = $byField[$reference] ?? (1 === \count($byColumn[$column] ?? []) && 1 === \count(array_filter($candidates, static fn (PiiCandidate $other): bool => self::normalize($other->column->name()) === $column)) ? $byColumn[$column][0] : null);
+
+            $decisions[] = match (true) {
+                null !== $verdict => self::decision($candidate, $verdict),
+                isset($written[$reference]) => self::decision($candidate, $written[$reference]),
+                default => new ClassifiedField(
+                    $candidate->column,
+                    $candidate->confidence >= 0.5,
+                    $candidate->category,
+                    $candidate->sensitivity,
+                    $candidate->confidence,
+                    'L\'agent n\'a pas rendu de verdict : décision de l\'heuristique. '.$candidate->reason,
+                    DecisionSource::Rules,
+                ),
+            };
         }
 
-        return new Arbitration(array_map(static fn (PiiCandidate $candidate): ClassifiedField => isset($verdicts[(string) $candidate->column->reference])
-            ? self::decision($candidate, $verdicts[(string) $candidate->column->reference])
-            : new ClassifiedField(
-                $candidate->column,
-                $candidate->confidence >= 0.5,
-                $candidate->category,
-                $candidate->sensitivity,
-                $candidate->confidence,
-                'L\'agent n\'a pas rendu de verdict : décision de l\'heuristique. '.$candidate->reason,
-                DecisionSource::Rules,
-            ), $candidates), $usage);
+        $rawVerdicts = array_map(static fn (FieldVerdict $verdict): string => \sprintf('%s → %s', '' === $verdict->field ? '(colonne vide)' : $verdict->field, $verdict->isPersonalData ? 'oui' : 'non'), $result->verdicts);
+
+        return new Arbitration($decisions, $usage, trim($conclusions), $rawVerdicts);
+    }
+
+    /**
+     * Reads the conclusion lines the investigator must end with, used when the verdicts agent misses a column:
+     * "table.column | personal data: yes | category | sensitivity | confidence | justification".
+     *
+     * @return array<string, FieldVerdict>
+     */
+    private static function writtenConclusions(string $conclusions): array
+    {
+        preg_match_all('/^[^\w\n]*([\w]+\.[\w]+)[^|\n]*\|\s*personal data:\s*(yes|no|oui|non)\s*\|\s*([\w-]+)\s*\|\s*([\w-]+)\s*\|\s*(?:confidence\s*)?([\d.]+)\s*\|\s*(.+?)\s*`?$/mi', $conclusions, $lines, \PREG_SET_ORDER);
+
+        $verdicts = [];
+        foreach ($lines as [, $field, $personal, $category, $sensitivity, $confidence, $justification]) {
+            $verdict = new FieldVerdict();
+            $verdict->field = $field;
+            $verdict->isPersonalData = \in_array(strtolower($personal), ['yes', 'oui'], true);
+            $verdict->category = strtolower($category);
+            $verdict->sensitivity = strtolower($sensitivity);
+            $verdict->confidence = (float) $confidence;
+            $verdict->justification = $justification;
+            $verdicts[self::normalize($field)] = $verdict;
+        }
+
+        return $verdicts;
+    }
+
+    private static function normalize(string $field): string
+    {
+        return strtolower(trim($field, " \t\n\r`'\"*."));
     }
 
     private static function sum(?AgentUsage $first, ?AgentUsage $second): ?AgentUsage
