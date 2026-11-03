@@ -41,6 +41,7 @@ deptrac:
             - symfony/finder
             - symfony/framework-bundle
             - symfony/http-client
+            - symfony/http-client-contracts
             - symfony/http-foundation
             - symfony/mcp-bundle
             - symfony/routing

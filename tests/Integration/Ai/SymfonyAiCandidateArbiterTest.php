@@ -27,10 +27,11 @@ use Symfony\AI\Platform\Result\ToolCall;
 use Symfony\AI\Platform\Result\ToolCallResult;
 use Symfony\AI\Platform\StructuredOutput\PlatformSubscriber;
 use Symfony\AI\Platform\Test\MockPlatformFactory;
+use Symfony\AI\Platform\TokenUsage\TokenUsage;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
- * Drives the real agent loop (tools, structured output) against a scripted platform: no network, no key.
+ * Drives the real agents (investigation with tools, then structured verdicts) against a scripted platform: no network, no key.
  */
 final class SymfonyAiCandidateArbiterTest extends TestCase
 {
@@ -39,10 +40,14 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
     /** @var list<mixed> payloads sent to the model */
     private array $payloads = [];
 
+    /** @var list<mixed> options of each call to the model */
+    private array $options = [];
+
     public function testTheAgentUsesItsToolsAndItsVerdictsBecomeDecisions(): void
     {
         $arbiter = $this->arbiter([
             new ToolCallResult([new ToolCall('call_1', 'read_code_snippet', ['file' => 'src/patients.php', 'line' => 2])]),
+            new TextResult("patients.nom | personal data: yes | identity | medium | 0.95 | Nom d'un patient, journalisé dans src/patients.php.\nville_reference.nom | personal data: no | location | low | 0.9 | Liste de référence des villes."),
             new TextResult((string) json_encode(['verdicts' => [
                 ['field' => 'patients.nom', 'isPersonalData' => true, 'category' => 'identity', 'sensitivity' => 'medium', 'confidence' => 0.95, 'justification' => 'Nom d\'un patient, journalisé dans src/patients.php.'],
                 ['field' => 'ville_reference.nom', 'isPersonalData' => false, 'category' => 'location', 'sensitivity' => 'low', 'confidence' => 0.9, 'justification' => 'Liste de référence des villes, sans lien avec une personne.'],
@@ -50,9 +55,19 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         ]);
 
         [$schema, $flows, $candidates] = $this->audit();
-        $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates);
+        $arbitration = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates);
+        $decisions = $arbitration->decisions;
 
         self::assertCount(2, $decisions);
+        self::assertSame([3, 3 * 1200, 3 * 80], [$arbitration->usage?->calls, $arbitration->usage?->inputTokens, $arbitration->usage?->outputTokens], 'Token usage is summed over both agents.');
+        foreach ($this->options as $index => $options) {
+            self::assertIsArray($options);
+            self::assertSame(4096, $options['max_output_tokens'] ?? null, 'Every call caps the output.');
+            self::assertFalse(isset($options['tools']) && isset($options['response_format']), \sprintf('Call %d mixes "tools" and "response_format", which providers reject.', $index));
+        }
+        self::assertArrayHasKey('tools', self::array($this->options[0]), 'The investigation uses tools.');
+        self::assertArrayHasKey('response_format', self::array($this->options[2]), 'The verdicts are structured.');
+        self::assertStringContainsString("Investigator's conclusions", (string) json_encode($this->payloads[2]), 'The verdicts agent receives the investigation.');
         self::assertTrue($decisions[0]->personal);
         self::assertSame(DecisionSource::Agent, $decisions[0]->decidedBy);
         self::assertSame(0.95, $decisions[0]->confidence);
@@ -68,13 +83,46 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
 
     public function testACandidateWithoutVerdictFallsBackToTheHeuristic(): void
     {
-        $arbiter = $this->arbiter([new TextResult('{"verdicts": [{"field": "patients.nom", "isPersonalData": true, "category": "identity", "sensitivity": "medium", "confidence": 0.9, "justification": "Nom du patient."}]}')]);
+        $arbiter = $this->arbiter([new TextResult('patients.nom | personal data: yes'), new TextResult('{"verdicts": [{"field": "patients.nom", "isPersonalData": true, "category": "identity", "sensitivity": "medium", "confidence": 0.9, "justification": "Nom du patient."}]}')]);
 
         [$schema, $flows, $candidates] = $this->audit();
-        $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates);
+        $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates)->decisions;
 
         self::assertSame(DecisionSource::Rules, $decisions[1]->decidedBy);
         self::assertStringContainsString('pas rendu de verdict', $decisions[1]->justification);
+    }
+
+    public function testVerdictFieldsAreMatchedLooselyButNeverAmbiguously(): void
+    {
+        $arbiter = $this->arbiter([
+            new TextResult('Enquête terminée.'),
+            new TextResult('{"verdicts": [{"field": "`Patients.Nom`", "isPersonalData": true, "category": "identity", "sensitivity": "medium", "confidence": 0.9, "justification": "Nom du patient."}, {"field": "nom", "isPersonalData": false, "category": "location", "sensitivity": "low", "confidence": 0.9, "justification": "Ambigu."}]}'),
+        ]);
+
+        [$schema, $flows, $candidates] = $this->audit();
+        $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates)->decisions;
+
+        self::assertSame(DecisionSource::Agent, $decisions[0]->decidedBy, 'Backticks and case are ignored.');
+        self::assertSame(DecisionSource::Rules, $decisions[1]->decidedBy, 'A bare "nom" names two candidates: it is not used.');
+    }
+
+    public function testTheWrittenConclusionsBackUpMissingVerdicts(): void
+    {
+        $arbiter = $this->arbiter([
+            new TextResult("Analyse faite.\n\n- `ville_reference.nom | personal data: no | location | low | 0.92 | Référentiel de villes utilisé pour un menu déroulant.`\npatients.nom | personal data: yes | identity | medium | confidence 0.9 | Nom des patients, journalisé."),
+            new TextResult('{"verdicts": []}'),
+        ]);
+
+        [$schema, $flows, $candidates] = $this->audit();
+        $arbitration = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates);
+
+        self::assertTrue($arbitration->decisions[0]->personal);
+        self::assertFalse($arbitration->decisions[1]->personal);
+        self::assertSame(DecisionSource::Agent, $arbitration->decisions[1]->decidedBy);
+        self::assertSame(0.92, $arbitration->decisions[1]->confidence);
+        self::assertSame('Référentiel de villes utilisé pour un menu déroulant.', $arbitration->decisions[1]->justification);
+        self::assertStringContainsString('Analyse faite.', (string) $arbitration->conclusions);
+        self::assertSame([], $arbitration->rawVerdicts);
     }
 
     public function testPlatformErrorsBecomeArbitrationFailures(): void
@@ -98,10 +146,13 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
 
         $calls = 0;
         $platform = MockPlatformFactory::createPlatform(
-            $script instanceof \Closure ? $script : function ($model, $input) use ($script, &$calls) {
+            $script instanceof \Closure ? $script : function ($model, $input, $options) use ($script, &$calls) {
                 $this->payloads[] = $input;
+                $this->options[] = $options;
+                $result = $script[$calls++] ?? new TextResult('{"verdicts": []}');
+                $result->getMetadata()->add('token_usage', new TokenUsage(promptTokens: 1200, completionTokens: 80, totalTokens: 1280));
 
-                return $script[$calls++] ?? new TextResult('{"verdicts": []}');
+                return $result;
             },
             eventDispatcher: $dispatcher,
         );
@@ -109,7 +160,17 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         $session = new AuditSession(new PiiMasker());
         $toolbox = new Toolbox([new DescribeTableTool($session), new FindColumnUsagesTool($session), new ReadCodeSnippetTool($session)]);
 
-        return new SymfonyAiCandidateArbiter(new Agent($platform, 'test-model', toolbox: $toolbox), $session);
+        return new SymfonyAiCandidateArbiter(new Agent($platform, 'test-model', toolbox: $toolbox), new Agent($platform, 'test-model'), $session);
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private static function array(mixed $value): array
+    {
+        self::assertIsArray($value);
+
+        return $value;
     }
 
     /**

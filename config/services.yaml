@@ -22,6 +22,9 @@ services:
     App\Domain\Rule\:
         resource: '../src/Domain/Rule/*Rule.php'
 
+    App\Infrastructure\Ai\Http\ErrorBodyRecordingHttpClient:
+        arguments: ['@http_client']
+
     App\Application\ScanProject:
         arguments:
             $rules: !tagged_iterator pii_radar.rule
