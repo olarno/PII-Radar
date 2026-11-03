@@ -10,7 +10,7 @@ Construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le
 
 ## État
 
-🚧 L'agent Symfony AI arbitre les colonnes ambiguës (données personnelles ou non) avec ses outils, sans jamais voir de valeur. Prochaine étape : serveur MCP, registre Loi 25 et rapport web.
+🚧 Le serveur MCP répond aux assistants de code (où vit une donnée, peut-on la journaliser, quels risques). Prochaines étapes : registre Loi 25 et rapport web.
 
 ## Démarrage
 
@@ -41,18 +41,23 @@ docker compose exec app bin/console pii:scan demo/legacy-app
 docker compose exec app bin/console pii:scan demo/legacy-app --format=json
 ```
 
-### Brancher le serveur MCP (STDIO)
+### Brancher le serveur MCP
 
-```json
-{
-  "mcpServers": {
-    "pii-radar": {
-      "command": "docker",
-      "args": ["compose", "exec", "-T", "app", "bin/console", "mcp:server"]
-    }
-  }
-}
-```
+Le serveur MCP répond à partir du **dernier scan** enregistré (`var/pii-radar/`) : lancez `pii:scan` une fois, puis posez vos questions sans coût.
+
+Avec Claude Code, rien à configurer : le fichier [`.mcp.json`](.mcp.json) du dépôt branche le serveur via `docker compose`. Pour un autre client, le serveur répond en STDIO (`docker compose exec -T app bin/console mcp:server`) et en HTTP (`http://localhost:8080/mcp/pii_radar`).
+
+| Capacité | Nom | Rôle |
+|---|---|---|
+| Outil | `pii_where_is` | Où vit une donnée (« courriel du patient », `patients.nam`) |
+| Outil | `pii_can_i_log` | Un champ peut-il être journalisé ? Réponse, règle, alternative, fuites existantes |
+| Outil | `pii_findings` | Findings filtrés par sévérité, fichier ou règle |
+| Outil | `pii_scan` | Relance un scan (appelle le LLM, sauf `withAgent: false`) |
+| Ressource | `pii://register` | Inventaire des renseignements personnels (brouillon de registre) |
+| Modèle de ressource | `pii://field/{table}/{column}` | Fiche complète d'un champ |
+| Prompt | `pii-review` | Revue d'un diff sous l'angle des données personnelles |
+
+Le projet interrogé est `PII_RADAR_PROJECT` (par défaut `demo/legacy-app`).
 
 ## Développement
 

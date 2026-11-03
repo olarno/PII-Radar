@@ -19,10 +19,12 @@ final class ScanCommandTest extends KernelTestCase
         $tester->assertCommandIsSuccessful();
         $output = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($output);
-        self::assertSame(['tables' => 6, 'columns' => 38], $output['schema']);
+        self::assertSame(1, $output['version']);
+        self::assertIsArray($output['schema']);
+        self::assertCount(6, $output['schema']);
         self::assertIsArray($output['candidates']);
         self::assertContains(
-            ['field' => 'patients.nam', 'type' => 'VARCHAR(12)', 'category' => 'government_id', 'sensitivity' => 'high', 'confidence' => 0.9, 'location' => ['file' => 'db/01-schema.sql', 'line' => 11], 'reason' => 'Le nom de colonne contient « nam ».'],
+            ['field' => 'patients.nam', 'category' => 'government_id', 'sensitivity' => 'high', 'confidence' => 0.9, 'reason' => 'Le nom de colonne contient « nam ».'],
             $output['candidates'],
         );
         self::assertIsArray($output['findings']);

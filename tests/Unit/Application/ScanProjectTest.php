@@ -7,7 +7,10 @@ namespace App\Tests\Unit\Application;
 use App\Application\AgentUsage;
 use App\Application\Port\Arbitration;
 use App\Application\Port\CandidateArbiter;
+use App\Application\Port\ReportStore;
 use App\Application\ScanProject;
+use App\Application\ScanReport;
+use App\Application\StoredReport;
 use App\Domain\Pii\ClassifiedField;
 use App\Domain\Pii\ColumnNameClassifier;
 use App\Domain\Pii\DecisionSource;
@@ -74,6 +77,7 @@ final class ScanProjectTest extends TestCase
             new WebrootDataFileFinder(),
             new ColumnNameClassifier(),
             $arbiter,
+            new InMemoryReportStore(),
             [new \App\Domain\Rule\NoRetentionRule(), new \App\Domain\Rule\PersonalDataInLogsRule()],
         );
     }
@@ -100,5 +104,21 @@ final class RecordingArbiter implements CandidateArbiter
             'Décision de test.',
             DecisionSource::Agent,
         ), $candidates), new AgentUsage(3, 9000, 400));
+    }
+}
+
+final class InMemoryReportStore implements ReportStore
+{
+    /** @var array<string, StoredReport> */
+    private array $reports = [];
+
+    public function save(string $projectPath, ScanReport $report): StoredReport
+    {
+        return $this->reports[$projectPath] = new StoredReport($report, $projectPath, new \DateTimeImmutable());
+    }
+
+    public function load(string $projectPath): ?StoredReport
+    {
+        return $this->reports[$projectPath] ?? null;
     }
 }

@@ -1,4 +1,8 @@
 parameters:
+    # Where the last scan of each audited project is kept.
+    pii_radar.report_directory: '%kernel.project_dir%/var/pii-radar'
+    # The project the MCP server answers about (relative to the PII Radar directory, or absolute).
+    pii_radar.project: '%env(PII_RADAR_PROJECT)%'
 
 services:
     _defaults:
@@ -24,6 +28,19 @@ services:
 
     App\Infrastructure\Ai\Http\ErrorBodyRecordingHttpClient:
         arguments: ['@http_client']
+
+    App\Infrastructure\Report\JsonReportStore:
+        arguments:
+            $directory: '%pii_radar.report_directory%'
+
+    App\Infrastructure\Mcp\AuditedProject:
+        arguments:
+            $project: '%pii_radar.project%'
+            $projectDir: '%kernel.project_dir%'
+
+    App\Infrastructure\Mcp\ReviewPrompt:
+        arguments:
+            $rules: !tagged_iterator pii_radar.rule
 
     App\Application\ScanProject:
         arguments:

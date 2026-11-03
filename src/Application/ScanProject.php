@@ -8,6 +8,7 @@ use App\Application\Port\ArbitrationFailed;
 use App\Application\Port\CandidateArbiter;
 use App\Application\Port\CodeScanner;
 use App\Application\Port\DataFileFinder;
+use App\Application\Port\ReportStore;
 use App\Application\Port\SchemaReader;
 use App\Domain\Finding\Finding;
 use App\Domain\Pii\ClassifiedField;
@@ -18,7 +19,7 @@ use App\Domain\Rule\Rule;
 
 /**
  * Scans an audited project: schema and candidates, code flows, arbitration of the ambiguous candidates by the agent,
- * then the rules that turn it all into findings.
+ * then the rules that turn it all into findings. The report is stored as the project's last scan.
  */
 final readonly class ScanProject
 {
@@ -34,6 +35,7 @@ final readonly class ScanProject
         private DataFileFinder $dataFileFinder,
         private ColumnNameClassifier $classifier,
         private CandidateArbiter $arbiter,
+        private ReportStore $reportStore,
         private iterable $rules,
     ) {
     }
@@ -79,6 +81,10 @@ final readonly class ScanProject
         usort($findings, static fn (Finding $a, Finding $b): int => [$b->severity->weight(), $a->rule, $a->location->file, $a->location->line]
             <=> [$a->severity->weight(), $b->rule, $b->location->file, $b->location->line]);
 
-        return new ScanReport($schema, $candidates, $classified, $flows, $findings, $arbitrated, $usage, $arbitration);
+        $report = new ScanReport($schema, $candidates, $classified, $flows, $findings, $arbitrated, $usage, $arbitration);
+        // Kept for the MCP server, the register and the web report, which must not pay for a new scan.
+        $this->reportStore->save($projectPath, $report);
+
+        return $report;
     }
 }

@@ -1,0 +1,8 @@
+{
+    "mcpServers": {
+        "pii-radar": {
+            "command": "docker",
+            "args": ["compose", "exec", "-T", "app", "bin/console", "mcp:server"]
+        }
+    }
+}

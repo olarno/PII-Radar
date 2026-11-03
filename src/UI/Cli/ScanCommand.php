@@ -9,8 +9,8 @@ use App\Application\ScanProject;
 use App\Domain\Finding\Finding;
 use App\Domain\Flow\FlowPoint;
 use App\Domain\Pii\ClassifiedField;
-use App\Domain\Pii\PiiCandidate;
 use App\Domain\Schema\FieldReference;
+use App\Infrastructure\Report\ScanReportJson;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
@@ -22,6 +22,7 @@ final readonly class ScanCommand
 {
     public function __construct(
         private ScanProject $scanProject,
+        private ScanReportJson $json,
     ) {
     }
 
@@ -58,50 +59,7 @@ final readonly class ScanCommand
         $columnCount = \count($report->schema->columns());
 
         if ('json' === $format) {
-            $io->writeln(json_encode([
-                'schema' => ['tables' => $tableCount, 'columns' => $columnCount],
-                'arbitrated' => $report->arbitrated,
-                'agent_usage' => null === $report->agentUsage ? null : [
-                    'calls' => $report->agentUsage->calls,
-                    'input_tokens' => $report->agentUsage->inputTokens,
-                    'output_tokens' => $report->agentUsage->outputTokens,
-                ],
-                'findings' => array_map(static fn (Finding $finding): array => [
-                    'rule' => $finding->rule,
-                    'severity' => $finding->severity->value,
-                    'location' => ['file' => $finding->location->file, 'line' => $finding->location->line],
-                    'fields' => self::names($finding->fields),
-                    'summary' => $finding->summary,
-                    'remediation' => $finding->remediation,
-                    'recipient' => $finding->recipient,
-                    'jurisdiction' => $finding->jurisdiction,
-                ], $report->findings),
-                'candidates' => array_map(static fn (PiiCandidate $candidate): array => [
-                    'field' => (string) $candidate->column->reference,
-                    'type' => $candidate->column->type,
-                    'category' => $candidate->category->value,
-                    'sensitivity' => $candidate->sensitivity->value,
-                    'confidence' => $candidate->confidence,
-                    'location' => ['file' => $candidate->column->location->file, 'line' => $candidate->column->location->line],
-                    'reason' => $candidate->reason,
-                ], $report->candidates),
-                'classified_fields' => array_map(static fn (ClassifiedField $field): array => [
-                    'field' => (string) $field->column->reference,
-                    'personal_data' => $field->personal,
-                    'category' => $field->category->value,
-                    'sensitivity' => $field->sensitivity->value,
-                    'confidence' => $field->confidence,
-                    'decided_by' => $field->decidedBy->value,
-                    'justification' => $field->justification,
-                ], $report->classifiedFields),
-                'flows' => array_map(static fn (FlowPoint $flow): array => [
-                    'operation' => $flow->operation->value,
-                    'fields' => self::names($flow->fields),
-                    'location' => ['file' => $flow->location->file, 'line' => $flow->location->line],
-                    'target' => $flow->target,
-                    'concatenated_fields' => self::names($flow->concatenatedFields),
-                ], $report->flows),
-            ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR));
+            $io->writeln(json_encode($this->json->normalize($report), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR));
 
             return Command::SUCCESS;
         }
