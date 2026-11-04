@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}PII Radar{% endblock %}</title>
+    <style>
+        :root {
+            --bg: #fafafa; --panel: #ffffff; --text: #18181b; --muted: #52525b; --line: #e4e4e7; --accent: #2b6cb0;
+            --critical: #9b1c1c; --high: #c2410c; --medium: #a16207; --low: #3f6212; --ok: #2f855a;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #111113; --panel: #1b1b1f; --text: #f4f4f5; --muted: #a1a1aa; --line: #2e2e33; --accent: #7aa7e0;
+                --critical: #f87171; --high: #fb923c; --medium: #facc15; --low: #a3e635; --ok: #4ade80; }
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+        header { border-bottom: 1px solid var(--line); background: var(--panel); }
+        header .wrap { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+        header a.brand { font-weight: 700; color: var(--text); text-decoration: none; font-size: 1.1rem; }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 1rem 16px; }
+        a { color: var(--accent); }
+        h1 { font-size: 1.6rem; margin: .5rem 0; } h2 { font-size: 1.2rem; margin-top: 2rem; border-bottom: 1px solid var(--line); padding-bottom: .3rem; }
+        .muted { color: var(--muted); }
+        .notice { border-left: 4px solid var(--accent); background: var(--panel); padding: .6rem 1rem; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; margin: 1rem 0; }
+        .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: .75rem 1rem; }
+        .card strong { display: block; font-size: 1.6rem; }
+        table { width: 100%; border-collapse: collapse; background: var(--panel); }
+        th, td { text-align: left; vertical-align: top; padding: .5rem .6rem; border-bottom: 1px solid var(--line); }
+        th { font-size: .85rem; color: var(--muted); font-weight: 600; }
+        .scroll { overflow-x: auto; }
+        .badge { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid currentColor; white-space: nowrap; }
+        .critical { color: var(--critical); } .high { color: var(--high); } .medium { color: var(--medium); } .low { color: var(--low); } .ok { color: var(--ok); }
+        code { font-size: .9em; }
+        pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+        footer { margin: 3rem 0 1rem; font-size: .85rem; }
+    </style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/report">PII Radar</a><span class="muted">Où vivent les données personnelles de votre application</span></div></header>
+<main class="wrap">
+    {% block body %}{% endblock %}
+    <footer class="muted">Brouillon d'aide à la conformité (Loi 25, RGPD), pas un avis juridique.</footer>
+</main>
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, securityLevel: 'strict', theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' });
+</script>
+</body>
+</html>

@@ -43,6 +43,7 @@ deptrac:
             - symfony/http-client
             - symfony/http-client-contracts
             - symfony/http-foundation
+            - symfony/http-kernel
             - symfony/mcp-bundle
             - symfony/routing
             - symfony/twig-bundle

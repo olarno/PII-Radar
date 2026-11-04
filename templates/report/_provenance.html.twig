@@ -1,0 +1,1 @@
+<p class="muted">Scan du {{ stored.scannedAt|date('Y-m-d H:i T') }} · {{ stored.report.arbitrated ? 'colonnes ambiguës arbitrées par l\'agent IA' : 'sans agent IA' }}{% if stored.report.agentUsage %} ({{ stored.report.agentUsage.calls }} appels au modèle, {{ stored.report.agentUsage.inputTokens ?? '?' }} tokens en entrée){% endif %}</p>
