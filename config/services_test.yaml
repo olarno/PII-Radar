@@ -1,3 +1,6 @@
+parameters:
+    pii_radar.report_directory: '%kernel.cache_dir%/pii-radar'
+
 services:
     pii_radar.test.demo_cassette:
         class: Symfony\AI\Platform\Test\Replay\HttpCassette
