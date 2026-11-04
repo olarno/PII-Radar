@@ -46,6 +46,7 @@ deptrac:
             - symfony/mcp-bundle
             - symfony/routing
             - symfony/twig-bundle
+            - twig/twig
             - mcp/sdk
             - nikic/php-parser
   ruleset:
