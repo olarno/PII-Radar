@@ -1,0 +1,6 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+    <h1>Aucun scan pour l'instant</h1>
+    <p class="notice">{{ message }}</p>
+    <pre><code>docker compose exec app bin/console pii:scan demo/legacy-app</code></pre>
+{% endblock %}

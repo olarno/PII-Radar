@@ -10,7 +10,7 @@ Construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le
 
 ## État
 
-🚧 Le serveur MCP répond aux assistants de code et PII Radar génère le brouillon de registre (Loi 25 ou RGPD). Prochaine étape : le rapport web.
+✅ MVP complet : scan déterministe, arbitrage par un agent Symfony AI, serveur MCP, brouillon de registre Loi 25 / RGPD et rapport web.
 
 ## Démarrage
 
@@ -20,7 +20,7 @@ echo "HUGGINGFACE_API_KEY=hf_xxx" > .env.local   # token Hugging Face, requis po
 docker compose up -d
 ```
 
-- Appli PII Radar : http://localhost:8080/health
+- **Rapport web : http://localhost:8080/report** (findings, données personnelles, carte des flux, parcours de chaque champ, registre à télécharger)
 - Appli de démo « Clinique Bonsoir » : http://localhost:8081 (compte `reception@clinique-bonsoir.test` / `bonsoir`, rappelé sur la page de connexion)
 - Serveur MCP HTTP : http://localhost:8080/mcp/pii_radar
 
