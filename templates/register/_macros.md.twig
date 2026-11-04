@@ -1,0 +1,12 @@
+{#- Markdown output: escaping is off on purpose, the content is not HTML. -#}
+{%- macro locations(locations) -%}
+{%- autoescape false -%}{{ locations is empty ? '—' : locations|map(l => l.__toString())|join(', ') }}{%- endautoescape -%}
+{%- endmacro -%}
+
+{%- macro fields(fields) -%}
+{%- autoescape false -%}{{ fields|map(f => '`' ~ f.__toString() ~ '`')|join(', ') }}{%- endautoescape -%}
+{%- endmacro -%}
+
+{%- macro finding(finding) -%}
+{%- autoescape false -%}**{{ finding.rule }}** ({{ finding.severity.label()|lower }}) · {{ finding.location.__toString() }} — {{ finding.summary }} Correctif : {{ finding.remediation }}{%- endautoescape -%}
+{%- endmacro -%}

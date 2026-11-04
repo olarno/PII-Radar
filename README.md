@@ -10,7 +10,7 @@ Construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le
 
 ## État
 
-🚧 Le serveur MCP répond aux assistants de code (où vit une donnée, peut-on la journaliser, quels risques). Prochaines étapes : registre Loi 25 et rapport web.
+🚧 Le serveur MCP répond aux assistants de code et PII Radar génère le brouillon de registre (Loi 25 ou RGPD). Prochaine étape : le rapport web.
 
 ## Démarrage
 
@@ -41,6 +41,17 @@ docker compose exec app bin/console pii:scan demo/legacy-app
 docker compose exec app bin/console pii:scan demo/legacy-app --format=json
 ```
 
+### Générer le brouillon de registre
+
+À partir du dernier scan, sans nouvel appel au LLM :
+
+```bash
+docker compose exec app bin/console pii:register                     # Loi 25, sur la sortie standard
+docker compose exec app bin/console pii:register --format=rgpd --output=var/registre-rgpd.md --name="Clinique Bonsoir"
+```
+
+Le registre décrit ce que montrent le code et le schéma : renseignements par catégorie, tiers destinataires et communications hors Québec (EFVP), suppressions trouvées, mesures de sécurité et lacunes. Tout ce qui ne se déduit pas du code (finalités, durées de conservation, responsable) est marqué « à confirmer ».
+
 ### Brancher le serveur MCP
 
 Le serveur MCP répond à partir du **dernier scan** enregistré (`var/pii-radar/`) : lancez `pii:scan` une fois, puis posez vos questions sans coût.
@@ -53,7 +64,8 @@ Avec Claude Code, rien à configurer : le fichier [`.mcp.json`](.mcp.json) du d�
 | Outil | `pii_can_i_log` | Un champ peut-il être journalisé ? Réponse, règle, alternative, fuites existantes |
 | Outil | `pii_findings` | Findings filtrés par sévérité, fichier ou règle |
 | Outil | `pii_scan` | Relance un scan (appelle le LLM, sauf `withAgent: false`) |
-| Ressource | `pii://register` | Inventaire des renseignements personnels (brouillon de registre) |
+| Ressource | `pii://register` | Brouillon de registre Loi 25 |
+| Ressource | `pii://register/rgpd` | Brouillon de registre RGPD (art. 30) |
 | Modèle de ressource | `pii://field/{table}/{column}` | Fiche complète d'un champ |
 | Prompt | `pii-review` | Revue d'un diff sous l'angle des données personnelles |
 

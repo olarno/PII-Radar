@@ -36,7 +36,7 @@ final class McpServerTest extends WebTestCase
     public function testEveryCapabilityIsAdvertised(): void
     {
         self::assertSame(['pii_can_i_log', 'pii_findings', 'pii_scan', 'pii_where_is'], $this->names('tools/list', 'tools', 'name'));
-        self::assertSame(['pii://register'], $this->names('resources/list', 'resources', 'uri'));
+        self::assertSame(['pii://register', 'pii://register/rgpd'], $this->names('resources/list', 'resources', 'uri'));
         self::assertSame(['pii://field/{table}/{column}'], $this->names('resources/templates/list', 'resourceTemplates', 'uriTemplate'));
         self::assertSame(['pii-review'], $this->names('prompts/list', 'prompts', 'name'));
     }
@@ -82,8 +82,10 @@ final class McpServerTest extends WebTestCase
 
         self::assertStringContainsString('# patients.nam', $this->read('pii://field/patients/nam'));
         self::assertStringContainsString('Identifiant gouvernemental', $this->read('pii://field/patients/nam'));
-        self::assertStringContainsString('`rendezvous.motif` · sensibilité élevée', $this->read('pii://register'));
+        self::assertStringContainsString('# Inventaire des renseignements personnels : legacy-app (brouillon)', $this->read('pii://register'));
+        self::assertStringContainsString('| `rendezvous.motif` | Élevée |', $this->read('pii://register'));
         self::assertStringNotContainsString('ville_reference', $this->read('pii://register'));
+        self::assertStringContainsString('Catégories particulières (art. 9)', $this->read('pii://register/rgpd'));
     }
 
     public function testTheReviewPromptCarriesTheInventoryAndTheDiff(): void
