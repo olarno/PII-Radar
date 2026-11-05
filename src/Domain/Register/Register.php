@@ -32,6 +32,7 @@ final readonly class Register
         public array $retention,
         public array $measures,
         public array $gaps,
+        public bool $replayed = false,
     ) {
     }
 

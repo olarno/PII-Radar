@@ -31,9 +31,3 @@ ai:
             prompt:
                 file: '%kernel.project_dir%/config/prompts/verdicts.md'
 
-when@test:
-    ai:
-        platform:
-            huggingface:
-                # Replays the recorded Hugging Face exchanges of tests/Fixtures/cassettes (records them when missing).
-                http_client: 'pii_radar.test.cassette_http_client'

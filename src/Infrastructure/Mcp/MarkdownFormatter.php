@@ -101,7 +101,11 @@ final class MarkdownFormatter
         return \sprintf(
             '_Dernier scan : %s, %s._',
             $stored->scannedAt->format('Y-m-d H:i'),
-            $stored->report->arbitrated ? 'colonnes ambiguës arbitrées par l\'agent' : 'sans agent',
+            match (true) {
+                $stored->report->replayed => 'colonnes ambiguës arbitrées par l\'agent (réponses rejouées depuis un appel enregistré)',
+                $stored->report->arbitrated => 'colonnes ambiguës arbitrées par l\'agent',
+                default => 'sans agent',
+            },
         );
     }
 }

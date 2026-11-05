@@ -37,6 +37,7 @@ final class ScanReportJson
         return [
             'version' => self::VERSION,
             'arbitrated' => $report->arbitrated,
+            'replayed' => $report->replayed,
             'agent_usage' => null === $report->agentUsage ? null : [
                 'calls' => $report->agentUsage->calls,
                 'input_tokens' => $report->agentUsage->inputTokens,
@@ -158,6 +159,7 @@ final class ScanReportJson
             self::bool($data, 'arbitrated'),
             \is_array($usage) ? new AgentUsage((int) self::float($usage, 'calls'), self::nullableInt($usage, 'input_tokens'), self::nullableInt($usage, 'output_tokens')) : null,
             \is_array($agent) ? new Arbitration([], null, self::nullableString($agent, 'conclusions'), array_values(array_filter(self::list($agent, 'raw_verdicts', false), \is_string(...)))) : null,
+            true === ($data['replayed'] ?? false),
         );
     }
 

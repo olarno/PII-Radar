@@ -10,6 +10,7 @@ use App\Domain\Finding\Finding;
 use App\Domain\Flow\FlowPoint;
 use App\Domain\Pii\ClassifiedField;
 use App\Domain\Schema\FieldReference;
+use App\Infrastructure\Ai\AgentReplay;
 use App\Infrastructure\Report\ScanReportJson;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -23,6 +24,7 @@ final readonly class ScanCommand
     public function __construct(
         private ScanProject $scanProject,
         private ScanReportJson $json,
+        private AgentReplay $replay,
     ) {
     }
 
@@ -31,6 +33,7 @@ final readonly class ScanCommand
         #[Argument(description: 'Dossier racine de l\'application auditée')] string $path,
         #[Option(description: 'Format de sortie : table ou json')] string $format = 'table',
         #[Option(name: 'no-ai', description: 'Sans l\'agent : l\'heuristique décide seule des candidats ambigus')] bool $noAi = false,
+        #[Option(description: 'Démo sans token : rejoue un vrai appel Hugging Face enregistré sur demo/legacy-app')] bool $replay = false,
     ): int {
         if (!\in_array($format, ['table', 'json'], true)) {
             $io->error(\sprintf('Format "%s" inconnu : utilisez table ou json.', $format));
@@ -38,8 +41,17 @@ final readonly class ScanCommand
             return Command::INVALID;
         }
 
+        if ($replay && $noAi) {
+            $io->error('--replay rejoue l\'agent : il ne se combine pas avec --no-ai.');
+
+            return Command::INVALID;
+        }
+
         try {
-            $report = ($this->scanProject)($path, !$noAi);
+            if ($replay) {
+                $this->replay->start($path);
+            }
+            $report = ($this->scanProject)($path, !$noAi, $replay);
         } catch (\InvalidArgumentException $exception) {
             $io->error($exception->getMessage());
 
@@ -85,7 +97,11 @@ final readonly class ScanCommand
             $tableCount,
             $columnCount,
             \count($report->candidates),
-            $report->arbitrated ? 'Les candidats ambigus ont été arbitrés par l\'agent.' : 'Sans agent : l\'heuristique a décidé seule.',
+            match (true) {
+                $report->replayed => 'Les candidats ambigus ont été arbitrés par l\'agent, réponses rejouées depuis un vrai appel enregistré.',
+                $report->arbitrated => 'Les candidats ambigus ont été arbitrés par l\'agent.',
+                default => 'Sans agent : l\'heuristique a décidé seule.',
+            },
         ));
         $io->table(
             ['Champ', 'Donnée perso.', 'Catégorie', 'Sensibilité', 'Confiance', 'Décidé par', 'Justification'],
@@ -120,7 +136,9 @@ final readonly class ScanCommand
             $io->listing([] === $report->arbitration->rawVerdicts ? ['(aucun verdict)'] : $report->arbitration->rawVerdicts);
         }
 
-        if (null !== $report->agentUsage) {
+        if ($report->replayed) {
+            $io->note(\sprintf('Rejeu : les réponses du modèle viennent de %s, un vrai appel Hugging Face enregistré. Aucune clé, aucun appel réseau, aucun coût.', basename($this->replay->recording())));
+        } elseif (null !== $report->agentUsage) {
             $io->note(\sprintf(
                 'Agent : %d appel(s) au modèle, %s tokens en entrée, %s en sortie.',
                 $report->agentUsage->calls,

@@ -42,10 +42,11 @@ final readonly class ScanProject
 
     /**
      * @param bool $arbitrate false to skip the agent: the heuristic then decides every candidate
+     * @param bool $replayed  true when the agent's answers are replayed from a recording, so that every output says so
      *
      * @throws ArbitrationFailed
      */
-    public function __invoke(string $projectPath, bool $arbitrate = true): ScanReport
+    public function __invoke(string $projectPath, bool $arbitrate = true, bool $replayed = false): ScanReport
     {
         $schema = $this->schemaReader->read($projectPath);
 
@@ -81,7 +82,7 @@ final readonly class ScanProject
         usort($findings, static fn (Finding $a, Finding $b): int => [$b->severity->weight(), $a->rule, $a->location->file, $a->location->line]
             <=> [$a->severity->weight(), $b->rule, $b->location->file, $b->location->line]);
 
-        $report = new ScanReport($schema, $candidates, $classified, $flows, $findings, $arbitrated, $usage, $arbitration);
+        $report = new ScanReport($schema, $candidates, $classified, $flows, $findings, $arbitrated, $usage, $arbitration, $arbitrated && $replayed);
         // Kept for the MCP server, the register and the web report, which must not pay for a new scan.
         $this->reportStore->save($projectPath, $report);
 

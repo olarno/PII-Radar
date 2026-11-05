@@ -9,8 +9,13 @@ services:
     # vendor/ lives in the mounted project and is refreshed by "composer install" at startup.
     volumes:
       - ./:/app
-      # The audited code is mounted read-only: PII Radar never writes into it.
-      - ./demo/legacy-app:/audited/legacy-app:ro
+    # Healthy once "composer install" is done and the server answers: "docker compose up -d --wait" waits for it.
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(false === @file_get_contents('http://127.0.0.1:8080/health') ? 1 : 0);"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 300s
 
   legacy-app:
     build:

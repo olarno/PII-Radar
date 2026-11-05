@@ -40,6 +40,14 @@ final class ReportControllerTest extends WebTestCase
         self::assertStringNotContainsString('ville_reference', $map);
     }
 
+    public function testAReplayedScanIsAnnouncedAsSuch(): void
+    {
+        self::getContainer()->get(ScanProject::class)(self::getContainer()->getParameter('kernel.project_dir').'/demo/legacy-app', replayed: true);
+        $this->client->request('GET', '/report');
+
+        self::assertSelectorTextContains('p.muted', 'réponses rejouées depuis un vrai appel Hugging Face enregistré');
+    }
+
     public function testAFieldPageShowsItsJourneyAndWhetherItMayBeLogged(): void
     {
         $this->scan();
