@@ -71,8 +71,8 @@ final class ScanCommandTest extends KernelTestCase
         $tester->execute(['path' => __DIR__.'/../../../demo/legacy-app', '--replay' => true]);
 
         $tester->assertCommandIsSuccessful();
-        self::assertStringContainsString('réponses rejouées depuis un vrai appel enregistré', $tester->getDisplay());
-        self::assertStringContainsString('Rejeu : les réponses du modèle viennent de agent-arbitration.json', $tester->getDisplay());
+        self::assertStringContainsString('réponses rejouées depuis un vrai appel enregistré', self::display($tester));
+        self::assertStringContainsString('Rejeu : les réponses du modèle viennent de agent-arbitration.json', self::display($tester));
     }
 
     public function testReplayOnlyWorksOnTheDemo(): void
@@ -80,7 +80,7 @@ final class ScanCommandTest extends KernelTestCase
         $tester = $this->tester();
 
         self::assertSame(Command::FAILURE, $tester->execute(['path' => __DIR__.'/../../Fixtures/code/clinic', '--replay' => true]));
-        self::assertStringContainsString('ne fonctionne que sur l\'appli de démo', $tester->getDisplay());
+        self::assertStringContainsString('ne fonctionne que sur l\'appli de démo', self::display($tester));
         self::assertSame(Command::INVALID, $this->tester()->execute(['path' => '.', '--replay' => true, '--no-ai' => true]));
     }
 
@@ -89,12 +89,20 @@ final class ScanCommandTest extends KernelTestCase
         $tester = $this->tester();
 
         self::assertSame(Command::FAILURE, $tester->execute(['path' => '/does/not/exist']));
-        self::assertStringContainsString('does not exist', $tester->getDisplay());
+        self::assertStringContainsString('does not exist', self::display($tester));
     }
 
     public function testRejectsAnUnknownFormat(): void
     {
         self::assertSame(Command::INVALID, $this->tester()->execute(['path' => '.', '--format' => 'xml']));
+    }
+
+    /**
+     * The console wraps long lines (a long project path moves the breaks): compare without the line breaks.
+     */
+    private static function display(CommandTester $tester): string
+    {
+        return (string) preg_replace('/\s*\n\s*(?:! )?/', ' ', $tester->getDisplay());
     }
 
     private function tester(): CommandTester
