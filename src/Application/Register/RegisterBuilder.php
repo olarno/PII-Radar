@@ -95,6 +95,7 @@ final readonly class RegisterBuilder
             $retention,
             self::measures($report->flows, $isPersonal, $deletions),
             $report->findings,
+            $report->replayed,
         );
     }
 

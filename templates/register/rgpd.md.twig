@@ -5,7 +5,7 @@
 
 > **Brouillon généré par PII Radar, pas un avis juridique.** Il décrit ce que montrent le code et le schéma de l'application. Les finalités, les bases légales et les délais d'effacement ne se déduisent pas du code : ils sont marqués {{ confirm }}.
 >
-> Scan du {{ register.scannedAt|date('Y-m-d H:i T') }}, {{ register.arbitrated ? 'colonnes ambiguës arbitrées par un agent IA' : 'sans agent IA' }}.
+> Scan du {{ register.scannedAt|date('Y-m-d H:i T') }}, {{ register.replayed ? 'colonnes ambiguës arbitrées par un agent IA (réponses rejouées depuis un appel enregistré)' : (register.arbitrated ? 'colonnes ambiguës arbitrées par un agent IA' : 'sans agent IA') }}.
 
 ## 1. Responsable du traitement
 
@@ -71,6 +71,10 @@ Aucun transfert hors UE trouvé dans le code.
 {% endfor %}
 
 ## 8. Mesures de sécurité (art. 32)
+{% if register.gaps is not empty %}
+
+{{ register.gaps|length }} lacunes : {{ register.gapsBySeverity|map((count, severity) => count ~ ' ' ~ severity)|join(', ') }}.
+{% endif %}
 
 {% for measure in register.measures -%}
 - Constatée : {{ measure.description }} ({{ md.locations(measure.evidence) }})

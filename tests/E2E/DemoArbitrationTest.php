@@ -12,15 +12,15 @@ use App\Domain\Pii\DecisionSource;
 /**
  * The full contract, with the arbiter agent: every planted finding, no extra finding, traps rejected.
  *
- * It replays tests/Fixtures/cassettes/demo-arbitration.json, a real Hugging Face run recorded once (no key needed to
- * replay). To record it again after changing the prompt, the tools or the demo:
+ * It replays demo/replay/agent-arbitration.json, a real Hugging Face run recorded once (no key needed to replay), the
+ * same recording "pii:scan --replay" uses. To record it again after changing the prompt, the tools or the demo:
  *
- *     rm tests/Fixtures/cassettes/demo-arbitration.json
+ *     rm demo/replay/agent-arbitration.json
  *     HUGGINGFACE_API_KEY=hf_... vendor/bin/phpunit tests/E2E/DemoArbitrationTest.php
  */
 final class DemoArbitrationTest extends DemoContractTestCase
 {
-    private const string CASSETTE = __DIR__.'/../Fixtures/cassettes/demo-arbitration.json';
+    private const string CASSETTE = __DIR__.'/../../demo/replay/agent-arbitration.json';
 
     private static ?ScanReport $report = null;
 

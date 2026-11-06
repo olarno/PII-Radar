@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Register;
 
 use App\Domain\Finding\Finding;
+use App\Domain\Finding\Severity;
 use App\Domain\Pii\PiiCategory;
 use App\Domain\Pii\Sensitivity;
 
@@ -32,6 +33,7 @@ final readonly class Register
         public array $retention,
         public array $measures,
         public array $gaps,
+        public bool $replayed = false,
     ) {
     }
 
@@ -68,6 +70,24 @@ final readonly class Register
     public function thirdParties(): array
     {
         return array_values(array_filter($this->recipients, static fn (Recipient $recipient): bool => !$recipient->dataSubject));
+    }
+
+    /**
+     * Written out so that no reader, human or assistant, has to count the list.
+     *
+     * @return array<string, int> lowercase severity label (most severe first) => number of gaps, empty severities left out
+     */
+    public function gapsBySeverity(): array
+    {
+        $counts = [];
+        foreach (array_reverse(Severity::cases()) as $severity) {
+            $count = \count(array_filter($this->gaps, static fn (Finding $gap): bool => $gap->severity === $severity));
+            if ($count > 0) {
+                $counts[mb_strtolower($severity->label()).($count > 1 ? 's' : '')] = $count;
+            }
+        }
+
+        return $counts;
     }
 
     /**

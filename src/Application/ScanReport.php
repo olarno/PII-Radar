@@ -21,6 +21,7 @@ final readonly class ScanReport
      * @param bool                  $arbitrated       whether the agent arbitrated the ambiguous candidates
      * @param ?AgentUsage           $agentUsage       what the arbitration cost, when the platform reports it
      * @param ?Arbitration          $arbitration      the agent's raw output, for diagnosis
+     * @param bool                  $replayed         whether the agent's answers came from a recording rather than the model
      */
     public function __construct(
         public Schema $schema,
@@ -31,6 +32,7 @@ final readonly class ScanReport
         public bool $arbitrated,
         public ?AgentUsage $agentUsage = null,
         public ?Arbitration $arbitration = null,
+        public bool $replayed = false,
     ) {
     }
 }

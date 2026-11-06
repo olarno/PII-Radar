@@ -2,13 +2,8 @@ parameters:
     pii_radar.report_directory: '%kernel.cache_dir%/pii-radar'
 
 services:
-    pii_radar.test.demo_cassette:
-        class: Symfony\AI\Platform\Test\Replay\HttpCassette
-        arguments:
-            - '%kernel.project_dir%/tests/Fixtures/cassettes/demo-arbitration.json'
-            - []
-            - !service { class: Symfony\AI\Platform\Test\Replay\BodyRedactor }
-
-    pii_radar.test.cassette_http_client:
-        class: Symfony\AI\Platform\Test\Replay\CassetteHttpClient
-        arguments: ['@pii_radar.test.demo_cassette', '@App\Infrastructure\Ai\Http\ErrorBodyRecordingHttpClient']
+    # Tests take the path of "pii:scan --replay": the recorded run answers, recorded again when the file is deleted.
+    App\Infrastructure\Ai\Http\ReplayableHttpClient:
+        arguments: ['@http_client']
+        calls:
+            - replay: ['%pii_radar.agent_replay%']

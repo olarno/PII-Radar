@@ -1,6 +1,6 @@
 # Décisions de cadrage
 
-Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'étape 1, 11 à 13 à l'étape 2c, 14 à 16 à l'étape 3a, 17 à l'étape 4a), en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
+Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'étape 1, 11 à 13 à l'étape 2c, 14 à 16 à l'étape 3a, 17 à l'étape 4a, 18 avec le README), en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
 
 | # | Sujet | Décision | Conséquence |
 |---|---|---|---|
@@ -21,6 +21,7 @@ Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'éta
 | 15 | Tests de l'agent | Les tests unitaires utilisent la plateforme scriptée de Symfony AI. Le test de bout en bout rejoue une cassette d'un vrai appel Hugging Face (`CassetteHttpClient`), enregistrée une fois. | La CI teste les vraies réponses du modèle, sans clé ni réseau. Changer le prompt, les outils ou la démo oblige à réenregistrer la cassette. |
 | 16 | Enquête puis verdict | L'arbitrage se fait en deux agents : `arbiter` enquête avec ses outils et conclut par écrit, puis `verdicts` (sans outils) rend la sortie structurée. | Les fournisseurs Hugging Face refusent `tools` et `response_format` dans la même requête (« "tools" is incompatible with "response_format" »). Coût : un appel au modèle de plus par scan. Si `verdicts` oublie une colonne, la ligne de conclusion écrite de l'enquêteur sert de verdict ; `pii:scan -v` affiche les deux. |
 | 17 | Dernier scan enregistré | Chaque `pii:scan` enregistre son rapport en JSON versionné dans `var/pii-radar/` (même format que `--format=json`). Le serveur MCP, le registre et le rapport web le relisent ; seul l'outil `pii_scan` relance un scan. | Poser une question à l'assistant ne coûte rien et répond instantanément. Une réponse indique toujours la date du scan sur lequel elle repose. |
+| 18 | Démo sans token | `pii:scan demo/legacy-app --replay` rejoue le vrai appel de l'agent enregistré (`demo/replay/agent-arbitration.json`), le même que la CI. Les agents, prompts et outils sont les vrais : seul le client HTTP du bridge Hugging Face répond depuis l'enregistrement. | Le jury voit l'agent et les pièges rejetés en 5 minutes, sans clé ni coût. La sortie, le rapport et le registre disent que les réponses sont rejouées. Rejeu limité à la démo. |
 
 ## Versions verrouillées (jour 1)
 
