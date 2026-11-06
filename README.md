@@ -50,7 +50,7 @@ Tout ce qui ne se déduit pas du code (finalités, durées de conservation, resp
 
 ### 5. Demander à votre assistant de code
 
-Avec [Claude Code](https://docs.claude.com/en/docs/claude-code), lancez `claude` dans le dossier du projet et acceptez le serveur `pii-radar` : le fichier [`.mcp.json`](.mcp.json) le branche via `docker compose`. Puis demandez :
+Avec [Claude Code](https://docs.claude.com/en/docs/claude-code), lancez `claude` dans le dossier du projet et acceptez le serveur `pii-radar` : le fichier [`.mcp.json`](.mcp.json) le branche via `docker compose`. Claude Code demande ensuite l'autorisation la première fois qu'il utilise chaque outil : acceptez (« Yes, and don't ask again » pour ne plus être interrompu). Refuser affiche « Interrupted · What should Claude do instead? ». Puis demandez :
 
 - « Ai-je le droit de logger `patients.nam` ? »
 - « Où vit le courriel du patient ? »
