@@ -8,12 +8,26 @@ use App\Application\Query\FieldSheet;
 use App\Application\StoredReport;
 use App\Domain\Finding\Finding;
 use App\Domain\Flow\FlowPoint;
+use App\Domain\Rule\Rule;
 
 /**
  * Renders query results as Markdown for MCP clients.
  */
 final class MarkdownFormatter
 {
+    /** @var array<string, string> rule id => title */
+    private array $titles = [];
+
+    /**
+     * @param iterable<Rule> $rules
+     */
+    public function __construct(iterable $rules = [])
+    {
+        foreach ($rules as $rule) {
+            $this->titles[$rule->id()] = $rule->title();
+        }
+    }
+
     public function sheet(FieldSheet $sheet, string $heading = '##'): string
     {
         $column = $sheet->column;
@@ -73,7 +87,11 @@ final class MarkdownFormatter
             $lines[] = \sprintf('- %s : %s%s', $operation, implode(', ', \array_slice($places, 0, 3)), \count($places) > 3 ? \sprintf(' (+%d)', \count($places) - 3) : '');
         }
         if ([] !== $sheet->findings) {
-            $lines[] = '- Findings : '.implode(', ', array_map(static fn (Finding $finding): string => \sprintf('%s (%s)', $finding->rule, mb_strtolower($finding->severity->label())), $sheet->findings));
+            // Each rule is named: a bare "PII-007" invites the assistant to guess what it means.
+            $lines[] = '- Findings :';
+            foreach ($sheet->findings as $finding) {
+                $lines[] = \sprintf('  - %s %s (%s) · %s', $finding->rule, $this->titles[$finding->rule] ?? '', mb_strtolower($finding->severity->label()), $finding->location);
+            }
         }
         $lines[] = \sprintf('- Fiche complète : pii://field/%s/%s', $column->reference->table, $column->reference->column);
 

@@ -71,6 +71,10 @@ Aucun transfert hors UE trouvé dans le code.
 {% endfor %}
 
 ## 8. Mesures de sécurité (art. 32)
+{% if register.gaps is not empty %}
+
+{{ register.gaps|length }} lacunes : {{ register.gapsBySeverity|map((count, severity) => count ~ ' ' ~ severity)|join(', ') }}.
+{% endif %}
 
 {% for measure in register.measures -%}
 - Constatée : {{ measure.description }} ({{ md.locations(measure.evidence) }})

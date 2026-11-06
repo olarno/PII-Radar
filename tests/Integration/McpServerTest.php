@@ -66,6 +66,7 @@ final class McpServerTest extends WebTestCase
         self::assertStringContainsString('### patients.courriel', $answer);
         self::assertStringContainsString('- Collecte : public/inscription.php:8', $answer);
         self::assertStringContainsString('pii://field/patients/courriel', $answer);
+        self::assertStringContainsString('  - PII-007 Export ou dump dans le webroot (critique) · public/export_patients.csv', $answer, 'Rules are named, not just numbered.');
         self::assertStringNotContainsString('email_template', $answer);
     }
 

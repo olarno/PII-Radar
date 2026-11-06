@@ -53,6 +53,10 @@ services:
         arguments:
             $rules: !tagged_iterator pii_radar.rule
 
+    App\Infrastructure\Mcp\MarkdownFormatter:
+        arguments:
+            $rules: !tagged_iterator pii_radar.rule
+
     App\Application\ScanProject:
         arguments:
             $rules: !tagged_iterator pii_radar.rule
