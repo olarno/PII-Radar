@@ -84,6 +84,7 @@ final class RegisterTest extends KernelTestCase
         self::assertStringContainsString('- [ ] Réaliser l\'EFVP et signer une entente écrite avec api.twilio.com.', $markdown);
         self::assertMatchesRegularExpression('/- `rendezvous\.motif` : .+/', $markdown, 'The agent\'s justification is quoted.');
         self::assertStringNotContainsString('&#', $markdown, 'Markdown, not HTML.');
+        self::assertStringContainsString('14 lacunes : 2 critiques, 5 élevées, 7 moyennes.', $markdown);
         self::assertSame(1 + 16 + 1 + 4 + 2, substr_count($markdown, '_À confirmer par le responsable_'), 'The warning, one purpose per field, the responsible person, one retention period per table, the purpose and the agreement of the third party.');
     }
 

@@ -3,6 +3,10 @@ framework:
     session: false
     property_info:
         with_constructor_extractor: true
+    # A report page for an unknown column is a 404 for the visitor, not an application error.
+    exceptions:
+        Symfony\Component\HttpKernel\Exception\NotFoundHttpException:
+            log_level: info
 
 when@test:
     framework:

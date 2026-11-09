@@ -3,6 +3,8 @@ parameters:
     pii_radar.report_directory: '%kernel.project_dir%/var/pii-radar'
     # The project the MCP server answers about (relative to the PII Radar directory, or absolute).
     pii_radar.project: '%env(PII_RADAR_PROJECT)%'
+    # A real run of the arbiter agent on the demo, replayed by "pii:scan --replay" and by the tests.
+    pii_radar.agent_replay: '%kernel.project_dir%/demo/replay/agent-arbitration.json'
 
 services:
     _defaults:
@@ -26,8 +28,17 @@ services:
     App\Domain\Rule\:
         resource: '../src/Domain/Rule/*Rule.php'
 
+    # Hugging Face traffic: ErrorBodyRecordingHttpClient → ReplayableHttpClient → http_client.
     App\Infrastructure\Ai\Http\ErrorBodyRecordingHttpClient:
+        arguments: ['@App\Infrastructure\Ai\Http\ReplayableHttpClient']
+
+    App\Infrastructure\Ai\Http\ReplayableHttpClient:
         arguments: ['@http_client']
+
+    App\Infrastructure\Ai\AgentReplay:
+        arguments:
+            $cassette: '%pii_radar.agent_replay%'
+            $demoProject: '%kernel.project_dir%/demo/legacy-app'
 
     App\Infrastructure\Report\JsonReportStore:
         arguments:
@@ -39,6 +50,10 @@ services:
             $projectDir: '%kernel.project_dir%'
 
     App\Infrastructure\Mcp\ReviewPrompt:
+        arguments:
+            $rules: !tagged_iterator pii_radar.rule
+
+    App\Infrastructure\Mcp\MarkdownFormatter:
         arguments:
             $rules: !tagged_iterator pii_radar.rule
 

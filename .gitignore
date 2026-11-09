@@ -24,3 +24,6 @@
 ###> deptrac/deptrac ###
 /.deptrac.cache
 ###< deptrac/deptrac ###
+
+# Your own applications to audit (see README, "Auditer votre application").
+/audited/

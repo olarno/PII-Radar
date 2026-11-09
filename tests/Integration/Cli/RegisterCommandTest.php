@@ -41,7 +41,8 @@ final class RegisterCommandTest extends KernelTestCase
         $tester = new CommandTester(new Application(self::$kernel ?? self::bootKernel())->find('pii:register'));
 
         self::assertSame(Command::FAILURE, $tester->execute([]));
-        self::assertStringContainsString('lancez d\'abord', $tester->getDisplay());
+        // The console wraps long messages: a long project path must not split the words checked here.
+        self::assertStringContainsString('lancez d\'abord', (string) preg_replace('/\s+/', ' ', $tester->getDisplay()));
     }
 
     public function testRejectsAnUnknownFramework(): void

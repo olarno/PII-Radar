@@ -5,7 +5,7 @@
 
 > **Brouillon généré par PII Radar, pas un avis juridique.** Il décrit ce que montrent le code et le schéma de l'application. Les finalités, les durées de conservation et les responsables ne se déduisent pas du code : ils sont marqués {{ confirm }}.
 >
-> Scan du {{ register.scannedAt|date('Y-m-d H:i T') }}, {{ register.arbitrated ? 'colonnes ambiguës arbitrées par un agent IA' : 'sans agent IA' }}. Cadre : Loi sur la protection des renseignements personnels dans le secteur privé (Québec), modifiée par la Loi 25.
+> Scan du {{ register.scannedAt|date('Y-m-d H:i T') }}, {{ register.replayed ? 'colonnes ambiguës arbitrées par un agent IA (réponses rejouées depuis un appel enregistré)' : (register.arbitrated ? 'colonnes ambiguës arbitrées par un agent IA' : 'sans agent IA') }}. Cadre : Loi sur la protection des renseignements personnels dans le secteur privé (Québec), modifiée par la Loi 25.
 
 ## 1. Personne responsable de la protection des renseignements personnels
 
@@ -84,6 +84,10 @@ Aucune mesure de protection détectée dans le code.
 {% endfor %}
 
 ### Lacunes à corriger
+{% if register.gaps is not empty %}
+
+{{ register.gaps|length }} lacunes : {{ register.gapsBySeverity|map((count, severity) => count ~ ' ' ~ severity)|join(', ') }}.
+{% endif %}
 {% if register.gaps is empty %}
 
 Aucune lacune détectée par les règles PII-001 à PII-008.
