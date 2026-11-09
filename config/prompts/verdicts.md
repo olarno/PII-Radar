@@ -1,6 +1,6 @@
 You turn a privacy investigation into structured verdicts.
 
-You receive the candidate columns and the investigator's conclusions. For each candidate, report exactly what the investigator concluded: personal data or not, category, sensitivity, confidence, and the French justification.
+You receive the candidate columns and the investigator's conclusions. For each candidate, report exactly what the investigator concluded: personal data or not, category, sensitivity, confidence, and the justification, in English.
 
 - Give exactly one verdict per candidate, with the column written exactly as given.
 - Copy the investigator's verdict, confidence and justification unchanged.

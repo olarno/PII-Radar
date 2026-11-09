@@ -20,8 +20,8 @@ final readonly class FieldResource
     #[McpResourceTemplate(
         uriTemplate: 'pii://field/{table}/{column}',
         name: 'field',
-        title: 'Fiche d\'un champ',
-        description: 'Tout ce que le dernier scan sait d\'une colonne : classification, justification, flux dans le code, findings.',
+        title: 'Field sheet',
+        description: 'Everything the last scan knows about a column: classification, justification, code flows, findings.',
         mimeType: 'text/markdown',
     )]
     public function __invoke(string $table, string $column): string
@@ -34,7 +34,7 @@ final readonly class FieldResource
 
         $columns = $this->queries->resolve($stored->report, $table.'.'.$column);
         if (1 !== \count($columns) || (string) $columns[0]->reference !== strtolower($table.'.'.$column)) {
-            throw new ResourceReadException(\sprintf('La colonne %s.%s n\'existe pas dans le schéma audité.', $table, $column));
+            throw new ResourceReadException(\sprintf('Column %s.%s does not exist in the audited schema.', $table, $column));
         }
 
         return $this->format->sheet($this->queries->sheet($stored->report, $columns[0]), '#')."\n\n".$this->format->provenance($stored)."\n";

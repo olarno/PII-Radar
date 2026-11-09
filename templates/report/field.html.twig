@@ -2,36 +2,36 @@
 {% set reference = sheet.column.reference %}
 {% block title %}{{ reference }} · PII Radar{% endblock %}
 {% block body %}
-    <p><a href="{{ path('report') }}">← Rapport</a></p>
+    <p><a href="{{ path('report') }}">← Report</a></p>
     <h1><code>{{ reference }}</code></h1>
     {{ include('report/_provenance.html.twig') }}
 
     {% set classification = sheet.classification %}
     <div class="cards">
-        <div class="card"><span>Donnée personnelle</span><strong class="{{ sheet.personal ? 'critical' : 'ok' }}">{{ sheet.personal ? 'Oui' : 'Non' }}</strong></div>
+        <div class="card"><span>Personal data</span><strong class="{{ sheet.personal ? 'critical' : 'ok' }}">{{ sheet.personal ? 'Yes' : 'No' }}</strong></div>
         {% if classification %}
-            <div class="card"><span>Catégorie</span><strong>{{ classification.category.label() }}</strong></div>
-            <div class="card"><span>Sensibilité</span><strong>{{ classification.sensitivity.label() }}</strong></div>
+            <div class="card"><span>Category</span><strong>{{ classification.category.label() }}</strong></div>
+            <div class="card"><span>Sensitivity</span><strong>{{ classification.sensitivity.label() }}</strong></div>
         {% endif %}
-        <div class="card"><span>Journalisable ?</span><strong class="{{ can_log.verdict.value == 'allowed' ? 'ok' : (can_log.verdict.value == 'avoid' ? 'medium' : 'critical') }}">{{ {allowed: 'Oui', avoid: 'À éviter', forbidden: 'Non'}[can_log.verdict.value] }}</strong></div>
+        <div class="card"><span>Can be logged?</span><strong class="{{ can_log.verdict.value == 'allowed' ? 'ok' : (can_log.verdict.value == 'avoid' ? 'medium' : 'critical') }}">{{ {allowed: 'Yes', avoid: 'Avoid', forbidden: 'No'}[can_log.verdict.value] }}</strong></div>
     </div>
 
     {% if classification %}
-        <p class="notice">{{ classification.justification }} <span class="muted">({{ classification.decidedBy.value == 'agent' ? 'agent IA' : 'règles' }}, confiance {{ (classification.confidence * 100)|round }} %)</span></p>
+        <p class="notice">{{ classification.justification }} <span class="muted">({{ classification.decidedBy.value == 'agent' ? 'AI agent' : 'rules' }}, confidence {{ (classification.confidence * 100)|round }}%)</span></p>
     {% endif %}
     <p>{{ can_log.reason }} {{ can_log.alternative }}</p>
-    <p class="muted">Déclarée dans <code>{{ sheet.column.location }}</code> ({{ sheet.column.type }}{{ sheet.column.nullable ? '' : ', NOT NULL' }}).</p>
+    <p class="muted">Declared in <code>{{ sheet.column.location }}</code> ({{ sheet.column.type }}{{ sheet.column.nullable ? '' : ', NOT NULL' }}).</p>
 
-    <h2>Parcours</h2>
+    <h2>Journey</h2>
     <pre class="mermaid">{{ flow_map }}</pre>
 
     {% if sheet.flows is not empty %}
-        <h2>Flux dans le code ({{ sheet.flows|length }})</h2>
+        <h2>Code flows ({{ sheet.flows|length }})</h2>
         <div class="scroll"><table>
-            <thead><tr><th>Opération</th><th>Emplacement</th><th>Cible</th></tr></thead>
+            <thead><tr><th>Operation</th><th>Location</th><th>Target</th></tr></thead>
             <tbody>
             {% for flow in sheet.flows %}
-                <tr><td>{{ flow.operation.label() }}</td><td><code>{{ flow.location }}</code></td><td>{{ flow.target }}{{ flow.concatenatedFields is empty ? '' : ' (SQL concaténé)' }}</td></tr>
+                <tr><td>{{ flow.operation.label() }}</td><td><code>{{ flow.location }}</code></td><td>{{ flow.target }}{{ flow.concatenatedFields is empty ? '' : ' (concatenated SQL)' }}</td></tr>
             {% endfor %}
             </tbody>
         </table></div>

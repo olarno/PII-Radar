@@ -8,5 +8,5 @@
 {%- endmacro -%}
 
 {%- macro finding(finding) -%}
-{%- autoescape false -%}**{{ finding.rule }}** ({{ finding.severity.label()|lower }}) · {{ finding.location.__toString() }} — {{ finding.summary }} Correctif : {{ finding.remediation }}{%- endautoescape -%}
+{%- autoescape false -%}**{{ finding.rule }}** ({{ finding.severity.label()|lower }}) · {{ finding.location.__toString() }} — {{ finding.summary }} Fix: {{ finding.remediation }}{%- endautoescape -%}
 {%- endmacro -%}

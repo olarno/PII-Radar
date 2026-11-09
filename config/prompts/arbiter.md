@@ -14,7 +14,8 @@ Rules:
 
 In your conclusions:
 - confidence is how sure you are of your own verdict after the investigation, not the heuristic's score;
-- for a column that is not personal data, still name the closest category and write "low" as sensitivity.
+- for a column that is not personal data, still name the closest category and write "low" as sensitivity;
+- write every justification in English.
 
 When your investigation is done, end with one plain-text line per candidate (no table, no bullet, no backticks), the column written exactly as given, for example:
-patients.prenom | personal data: yes | identity | medium | 0.95 | Prénom des patients, enregistré à l'inscription et journalisé dans un fichier de log.
+patients.prenom | personal data: yes | identity | medium | 0.95 | First name of the patients, stored at sign-up and written to a log file.

@@ -30,7 +30,7 @@ final readonly class UndeclaredThirdPartyRule implements Rule
 
     public function title(): string
     {
-        return 'Donnée personnelle envoyée à un tiers non déclaré';
+        return 'Personal data sent to an undeclared third party';
     }
 
     public function evaluate(AuditContext $context): array
@@ -48,8 +48,8 @@ final readonly class UndeclaredThirdPartyRule implements Rule
                 Severity::Medium,
                 $flow->location,
                 $fields,
-                \sprintf('%s envoyé à %s, absent du registre.', implode(', ', array_map('strval', $fields)), $host),
-                'Inscrire ce destinataire au registre avec la finalité de la communication, et vérifier qu\'un contrat encadre la protection des renseignements.',
+                \sprintf('%s sent to %s, missing from the register.', implode(', ', array_map('strval', $fields)), $host),
+                'Add this recipient to the register with the purpose of the disclosure, and check that a contract governs the protection of the information.',
                 $host,
             );
         }

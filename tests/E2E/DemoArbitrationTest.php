@@ -28,7 +28,7 @@ final class DemoArbitrationTest extends DemoContractTestCase
     {
         $key = $_SERVER['HUGGINGFACE_API_KEY'] ?? getenv('HUGGINGFACE_API_KEY');
         if (!is_file(self::CASSETTE) && (!\is_string($key) || '' === $key)) {
-            self::markTestIncomplete('Cassette absente : enregistrez-la une fois avec HUGGINGFACE_API_KEY=hf_... vendor/bin/phpunit tests/E2E/DemoArbitrationTest.php');
+            self::markTestIncomplete('Recording missing: record it once with HUGGINGFACE_API_KEY=hf_... vendor/bin/phpunit tests/E2E/DemoArbitrationTest.php');
         }
     }
 

@@ -1,28 +1,28 @@
 {% extends 'base.html.twig' %}
-{% block title %}Rapport · PII Radar{% endblock %}
+{% block title %}Report · PII Radar{% endblock %}
 {% block body %}
-    <h1>Rapport de données personnelles</h1>
+    <h1>Personal data report</h1>
     {{ include('report/_provenance.html.twig') }}
 
     <div class="cards">
         {% for severity, item in by_severity %}
             <div class="card"><span class="{{ severity }}">{{ item.label }}</span><strong>{{ item.count }}</strong></div>
         {% endfor %}
-        <div class="card"><span>Données personnelles</span><strong>{{ personal|length }}</strong></div>
+        <div class="card"><span>Personal data</span><strong>{{ personal|length }}</strong></div>
     </div>
 
-    <p>Registre (brouillon) : <a href="{{ path('report_register', {format: 'loi25'}) }}">Loi 25</a> · <a href="{{ path('report_register', {format: 'rgpd'}) }}">RGPD</a></p>
+    <p>Register (draft): <a href="{{ path('report_register', {format: 'law25'}) }}">Quebec Law 25</a> · <a href="{{ path('report_register', {format: 'gdpr'}) }}">GDPR</a></p>
 
     <section id="flow-map">
-    <h2>Carte des flux</h2>
-    <p class="muted">Formulaires, tables, journaux et destinataires des données personnelles. En rouge : ce qui demande une action.</p>
+    <h2>Flow map</h2>
+    <p class="muted">Forms, tables, logs and recipients of personal data. In red: what needs action.</p>
     <pre class="mermaid">{{ flow_map }}</pre>
     </section>
 
     <section id="findings">
     <h2>Findings ({{ report.findings|length }})</h2>
     <div class="scroll"><table>
-        <thead><tr><th>Règle</th><th>Sévérité</th><th>Preuve</th><th>Constat</th><th>Correctif</th></tr></thead>
+        <thead><tr><th>Rule</th><th>Severity</th><th>Evidence</th><th>Finding</th><th>Fix</th></tr></thead>
         <tbody>
         {% for finding in report.findings %}
             <tr>
@@ -38,16 +38,16 @@
     </section>
 
     <section id="personal">
-    <h2>Données personnelles ({{ personal|length }})</h2>
+    <h2>Personal data ({{ personal|length }})</h2>
     <div class="scroll"><table>
-        <thead><tr><th>Champ</th><th>Catégorie</th><th>Sensibilité</th><th>Décidé par</th><th>Justification</th></tr></thead>
+        <thead><tr><th>Field</th><th>Category</th><th>Sensitivity</th><th>Decided by</th><th>Justification</th></tr></thead>
         <tbody>
         {% for field in personal %}
             <tr>
                 <td><a href="{{ path('report_field', {table: field.column.reference.table, column: field.column.reference.column}) }}"><code>{{ field.column.reference }}</code></a></td>
                 <td>{{ field.category.label() }}</td>
                 <td><span class="badge {{ field.sensitivity.value == 'high' ? 'critical' : (field.sensitivity.value == 'medium' ? 'medium' : 'low') }}">{{ field.sensitivity.label() }}</span></td>
-                <td>{{ field.decidedBy.value == 'agent' ? 'Agent IA' : 'Règles' }} ({{ (field.confidence * 100)|round }} %)</td>
+                <td>{{ field.decidedBy.value == 'agent' ? 'AI agent' : 'Rules' }} ({{ (field.confidence * 100)|round }}%)</td>
                 <td>{{ field.justification }}</td>
             </tr>
         {% endfor %}
@@ -57,11 +57,11 @@
 
     {% if rejected is not empty %}
         <section id="rejected">
-        <h2>Écartées ({{ rejected|length }})</h2>
-        <p class="muted">Leur nom ressemble à une donnée personnelle, mais l'examen montre que ce n'en est pas.</p>
+        <h2>Rejected ({{ rejected|length }})</h2>
+        <p class="muted">Their name looks like personal data, but examination shows they are not.</p>
         <ul>
         {% for field in rejected %}
-            <li><code>{{ field.column.reference }}</code> : {{ field.justification }} <span class="muted">({{ field.decidedBy.value == 'agent' ? 'agent IA' : 'règles' }})</span></li>
+            <li><code>{{ field.column.reference }}</code> : {{ field.justification }} <span class="muted">({{ field.decidedBy.value == 'agent' ? 'AI agent' : 'rules' }})</span></li>
         {% endfor %}
         </ul>
         </section>

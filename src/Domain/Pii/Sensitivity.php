@@ -13,9 +13,9 @@ enum Sensitivity: string
     public function label(): string
     {
         return match ($this) {
-            self::Low => 'Faible',
-            self::Medium => 'Moyenne',
-            self::High => 'Élevée',
+            self::Low => 'Low',
+            self::Medium => 'Medium',
+            self::High => 'High',
         };
     }
 }

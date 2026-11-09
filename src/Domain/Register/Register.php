@@ -83,7 +83,7 @@ final readonly class Register
         foreach (array_reverse(Severity::cases()) as $severity) {
             $count = \count(array_filter($this->gaps, static fn (Finding $gap): bool => $gap->severity === $severity));
             if ($count > 0) {
-                $counts[mb_strtolower($severity->label()).($count > 1 ? 's' : '')] = $count;
+                $counts[mb_strtolower($severity->label())] = $count;
             }
         }
 

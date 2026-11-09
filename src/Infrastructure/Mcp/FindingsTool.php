@@ -22,15 +22,15 @@ final readonly class FindingsTool
 
     #[McpTool(
         name: 'pii_findings',
-        description: 'Les risques de données personnelles du dernier scan (règles PII-001 à PII-008), avec preuve et correctif, filtrables par sévérité minimale, fichier ou règle.',
+        description: 'The personal data risks of the last scan (rules PII-001 to PII-008), with evidence and fix, filtered by minimum severity, file or rule.',
         annotations: new ToolAnnotations(readOnlyHint: true, openWorldHint: false),
     )]
     public function __invoke(
-        #[Schema(description: 'Sévérité minimale', enum: ['low', 'medium', 'high', 'critical'])]
+        #[Schema(description: 'Minimum severity', enum: ['low', 'medium', 'high', 'critical'])]
         ?string $severity = null,
-        #[Schema(description: 'Partie du chemin du fichier, par exemple login.php')]
+        #[Schema(description: 'Part of the file path, e.g. login.php')]
         ?string $file = null,
-        #[Schema(description: 'Identifiant de règle, par exemple PII-002')]
+        #[Schema(description: 'Rule identifier, e.g. PII-002')]
         ?string $rule = null,
     ): string {
         try {
@@ -39,14 +39,14 @@ final readonly class FindingsTool
             throw new ToolCallException($exception->getMessage());
         }
 
-        $minimum = null === $severity || '' === $severity ? null : (Severity::tryFrom($severity) ?? throw new ToolCallException(\sprintf('Sévérité « %s » inconnue : low, medium, high ou critical.', $severity)));
+        $minimum = null === $severity || '' === $severity ? null : (Severity::tryFrom($severity) ?? throw new ToolCallException(\sprintf('Unknown severity "%s": low, medium, high or critical.', $severity)));
         $findings = $this->queries->findings($stored->report, $minimum, $file, $rule);
         if ([] === $findings) {
-            return "Aucun finding ne correspond à ces filtres.\n\n".$this->format->provenance($stored);
+            return "No finding matches these filters.\n\n".$this->format->provenance($stored);
         }
 
         return \sprintf(
-            "%d finding(s) :\n\n%s\n\n%s",
+            "%d finding(s):\n\n%s\n\n%s",
             \count($findings),
             implode("\n", array_map(fn ($finding): string => '- '.$this->format->finding($finding), $findings)),
             $this->format->provenance($stored),

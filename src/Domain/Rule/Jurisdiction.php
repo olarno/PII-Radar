@@ -14,10 +14,10 @@ enum Jurisdiction: string
     public function label(): string
     {
         return match ($this) {
-            self::Quebec => 'Québec',
-            self::CanadaOutsideQuebec => 'Canada, hors Québec',
-            self::UnitedStates => 'États-Unis',
-            self::EuropeanUnion => 'Union européenne',
+            self::Quebec => 'Quebec',
+            self::CanadaOutsideQuebec => 'Canada, outside Quebec',
+            self::UnitedStates => 'United States',
+            self::EuropeanUnion => 'European Union',
         };
     }
 }

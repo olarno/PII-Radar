@@ -1,31 +1,32 @@
-# Décisions de cadrage
+# Design decisions
 
-Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'étape 1, 11 à 13 à l'étape 2c, 14 à 16 à l'étape 3a, 17 à l'étape 4a, 18 avec le README), en complément du doc de cadrage. Elles priment sur lui en cas de conflit.
+Decisions approved from October 29, 2026 (1 to 7 at scoping, 8 to 10 before step 1, 11 to 13 at step 2c, 14 to 16 at step 3a, 17 at step 4a, 18 with the README, 19 at step 6), on top of the scoping document. They take precedence over it in case of conflict.
 
-| # | Sujet | Décision | Conséquence |
+| # | Topic | Decision | Consequence |
 |---|---|---|---|
-| 1 | Contrat de test | `demo/legacy-app/expected-findings.json` est écrit **avant** les scanners. | C'est la spec et le test E2E : 100 % des findings plantés retrouvés, 0 faux positif sur les pièges. |
-| 2 | Place de l'IA | L'IA passe par **Symfony AI** (`symfony/ai-platform`), avec Hugging Face Inference Providers par défaut. **Pas de mode local, pas d'Ollama.** Le fournisseur reste configurable (OpenAI, Anthropic…). | Un token Hugging Face est requis pour un vrai scan. Tests et CI tournent **sans clé**, avec la plateforme mockée de Symfony AI. Le coupon HF sert aux tests de fin de parcours. |
-| 3 | Suivi des flux | Heuristique, limitée à un fichier : clés `$_POST`/`$_GET`, noms de colonnes dans les chaînes SQL, variables suivies dans un même fichier. | Pas d'analyse de flux de données (taint) complète. Suffisant pour Clinique Bonsoir. |
-| 4 | PII-006 (rétention) | Heuristique explicite : aucun `DELETE` ni purge sur une table classée PII, aucune tâche planifiée. | La règle documente ce qu'elle cherche et ce qu'elle ne peut pas prouver. |
-| 5 | PII-008 (hors Québec) | Table déterministe des hôtes connus et de leur juridiction. | Pas de devinette : un hôte inconnu est signalé « juridiction à confirmer ». |
-| 6 | Fuite vers le LLM | Les extraits de code passent par un masquage regex (courriel, téléphone, NAS, NAM, code postal) avant tout envoi au LLM, dès le MVP. | Le LLM ne voit jamais une donnée personnelle, même écrite en dur dans le code audité. |
-| 7 | Pré-release | Noms de paquets vérifiés sur Packagist le jour 1, versions verrouillées dans `composer.lock`. | Voir ci-dessous. |
-| 8 | Appli de démo | Clinique Bonsoir est un faux back-office : les pages s'affichent et lisent la base, sans viser une appli complète. | Crédible à l'écran pour la vidéo, sans y passer de temps. |
-| 9 | API SMS de la démo | `rappel.php` appelle Twilio (`api.twilio.com`), que la table des juridictions de PII-008 reconnaît comme américain. | La démo n'appelle jamais réellement Twilio (identifiants absents). |
-| 10 | Pièges à faux positifs | Ceux du doc de cadrage : `parametres_courriel.email_template` et la table `ville_reference`. | Listés dans `not_pii` de `expected-findings.json`. |
-| 11 | Place des règles | Les règles PII-001 à PII-008 vivent dans `src/Domain/Rule` (et non `Infrastructure/Rule` comme dans le doc de cadrage). | Ce sont des fonctions pures sur le schéma, les flux et les fichiers exposés : testables sans framework ni fichiers. |
-| 12 | Seuil de confiance | Une colonne ne déclenche une règle que si sa confiance PII atteint 0,5. | `email_template` (0,27) ne déclenche rien. `ville_reference.nom` (0,6) déclenche encore PII-006 : l'agent l'écartera à l'étape suivante. Le test de bout en bout tolère ce cas, et seulement lui. |
-| 13 | Hors Québec | Pour PII-008, le reste du Canada est aussi « hors Québec » (Loi 25, art. 17). Un hôte absent de la table donne un finding de sévérité faible, « juridiction à confirmer ». | Aucune communication n'est supposée locale par défaut. |
-| 14 | Ce que le LLM arbitre | Les candidats à 0,8 de confiance ou plus sont décidés par les règles ; les autres sont arbitrés par l'agent `arbiter` (Symfony AI, Hugging Face). Le modèle par défaut est `openai/gpt-oss-120b`, configurable via `PII_RADAR_MODEL`. | Peu d'appels au LLM, uniquement sur les cas ambigus. Le prompt ne contient que des métadonnées ; les extraits de code passent par `PiiMasker`. |
-| 15 | Tests de l'agent | Les tests unitaires utilisent la plateforme scriptée de Symfony AI. Le test de bout en bout rejoue une cassette d'un vrai appel Hugging Face (`CassetteHttpClient`), enregistrée une fois. | La CI teste les vraies réponses du modèle, sans clé ni réseau. Changer le prompt, les outils ou la démo oblige à réenregistrer la cassette. |
-| 16 | Enquête puis verdict | L'arbitrage se fait en deux agents : `arbiter` enquête avec ses outils et conclut par écrit, puis `verdicts` (sans outils) rend la sortie structurée. | Les fournisseurs Hugging Face refusent `tools` et `response_format` dans la même requête (« "tools" is incompatible with "response_format" »). Coût : un appel au modèle de plus par scan. Si `verdicts` oublie une colonne, la ligne de conclusion écrite de l'enquêteur sert de verdict ; `pii:scan -v` affiche les deux. |
-| 17 | Dernier scan enregistré | Chaque `pii:scan` enregistre son rapport en JSON versionné dans `var/pii-radar/` (même format que `--format=json`). Le serveur MCP, le registre et le rapport web le relisent ; seul l'outil `pii_scan` relance un scan. | Poser une question à l'assistant ne coûte rien et répond instantanément. Une réponse indique toujours la date du scan sur lequel elle repose. |
-| 18 | Démo sans token | `pii:scan demo/legacy-app --replay` rejoue le vrai appel de l'agent enregistré (`demo/replay/agent-arbitration.json`), le même que la CI. Les agents, prompts et outils sont les vrais : seul le client HTTP du bridge Hugging Face répond depuis l'enregistrement. | Le jury voit l'agent et les pièges rejetés en 5 minutes, sans clé ni coût. La sortie, le rapport et le registre disent que les réponses sont rejouées. Rejeu limité à la démo. |
+| 1 | Test contract | `demo/legacy-app/expected-findings.json` is written **before** the scanners. | It is the spec and the E2E test: 100% of the planted findings found, 0 false positive on the traps. |
+| 2 | Role of AI | AI goes through **Symfony AI** (`symfony/ai-platform`), with Hugging Face Inference Providers by default. **No local mode, no Ollama.** The provider stays configurable (OpenAI, Anthropic…). | A Hugging Face token is required for a real scan. Tests and CI run **without a key**, with the Symfony AI mocked platform. The HF coupon is for the final end-to-end tests. |
+| 3 | Flow tracking | Heuristic, limited to one file: `$_POST`/`$_GET` keys, column names in SQL strings, variables tracked within the same file. | No full data flow (taint) analysis. Enough for Clinique Bonsoir. |
+| 4 | PII-006 (retention) | Explicit heuristic: no `DELETE` or purge on a table classified as PII, no scheduled task. | The rule documents what it looks for and what it cannot prove. |
+| 5 | PII-008 (outside Quebec) | Deterministic table of known hosts and their jurisdiction. | No guessing: an unknown host is reported as "jurisdiction to be confirmed". |
+| 6 | Leak to the LLM | Code excerpts go through regex masking (e-mail, phone, SIN, NAM, postal code) before anything is sent to the LLM, from the MVP on. | The LLM never sees personal data, even when hard-coded in the audited code. |
+| 7 | Pre-release | Package names checked on Packagist on day 1, versions locked in `composer.lock`. | See below. |
+| 8 | Demo app | Clinique Bonsoir is a fake back office: pages render and read the database, without aiming at a complete app. | Credible on screen for the video, without spending time on it. |
+| 9 | SMS API of the demo | `rappel.php` calls Twilio (`api.twilio.com`), which the PII-008 jurisdiction table knows as American. | The demo never really calls Twilio (no credentials). |
+| 10 | False-positive traps | Those of the scoping document: `parametres_courriel.email_template` and the `ville_reference` table. | Listed in `not_pii` of `expected-findings.json`. |
+| 11 | Where rules live | Rules PII-001 to PII-008 live in `src/Domain/Rule` (not `Infrastructure/Rule` as in the scoping document). | They are pure functions over the schema, the flows and the exposed files: testable without framework or files. |
+| 12 | Confidence threshold | A column only triggers a rule when its PII confidence reaches 0.5. | `email_template` (0.27) triggers nothing. `ville_reference.nom` (0.6) still triggers PII-006: the agent rejects it at the next step. The end-to-end test tolerates this case, and only this one. |
+| 13 | Outside Quebec | For PII-008, the rest of Canada is also "outside Quebec" (Law 25, s. 17). A host missing from the table gives a low-severity finding, "jurisdiction to be confirmed". | No communication is assumed local by default. |
+| 14 | What the LLM arbitrates | Candidates with a confidence of 0.8 or more are decided by the rules; the others are arbitrated by the `arbiter` agent (Symfony AI, Hugging Face). The default model is `openai/gpt-oss-120b`, configurable with `PII_RADAR_MODEL`. | Few LLM calls, only on ambiguous cases. The prompt only holds metadata; code excerpts go through `PiiMasker`. |
+| 15 | Agent tests | Unit tests use the Symfony AI scripted platform. The end-to-end test replays a recording of a real Hugging Face call (`CassetteHttpClient`), recorded once. | CI tests the real model answers, without key or network. Changing the prompt, the tools or the demo means recording again. |
+| 16 | Investigation, then verdict | Arbitration takes two agents: `arbiter` investigates with its tools and writes its conclusions, then `verdicts` (no tools) returns the structured output. | Hugging Face providers reject `tools` and `response_format` in the same request ("\"tools\" is incompatible with \"response_format\""). Cost: one more model call per scan. If `verdicts` forgets a column, the investigator's written conclusion line serves as the verdict; `pii:scan -v` shows both. |
+| 17 | Last scan stored | Each `pii:scan` stores its report as versioned JSON in `var/pii-radar/` (same format as `--format=json`). The MCP server, the register and the web report read it back; only the `pii_scan` tool runs a new scan. | Asking the assistant costs nothing and answers instantly. An answer always gives the date of the scan it relies on. |
+| 18 | Demo without a token | `pii:scan demo/legacy-app --replay` replays the real recorded agent call (`demo/replay/agent-arbitration.json`), the same one as CI. Agents, prompts and tools are the real ones: only the HTTP client of the Hugging Face bridge answers from the recording. | The jury sees the agent and the rejected traps in 5 minutes, without key or cost. The output, the report and the register say the answers are replayed. Replay limited to the demo. |
+| 19 | One language | Everything PII Radar produces or ships is in English: CLI, web report, registers, MCP answers, agent prompts and justifications, code comments, docs, video. Only the audited demo app, Clinique Bonsoir, stays in French, as a Quebec clinic's would. | The schema of the demo keeps its French names (`courriel`, `nam`), which is what the bilingual name classifier is for. Law 25 terms keep their Quebec acronym next to the English one (PIA, "EFVP"). |
 
-## Versions verrouillées (jour 1)
+## Locked versions (day 1)
 
-| Paquet | Version |
+| Package | Version |
 |---|---|
 | `symfony/ai-agent`, `ai-bundle`, `ai-platform`, `ai-store` | 1.0.0-BETA1 |
 | `symfony/ai-hugging-face-platform` | 1.0.0-BETA1 |
@@ -35,10 +36,10 @@ Décisions validées le 29 octobre 2026 (1 à 7 au cadrage, 8 à 10 avant l'éta
 | Symfony | 7.4 (LTS) |
 | PHP | 8.4 |
 
-Écarts avec les noms du doc de cadrage : le Store SQLite est le paquet `symfony/ai-sqlite-store`, et le bridge Hugging Face s'appuie sur `symfony/ai-generic-platform` (installé en dépendance). `minimum-stability` est à `beta` à cause de la pré-release.
+Differences with the names of the scoping document: the SQLite store is the `symfony/ai-sqlite-store` package, and the Hugging Face bridge relies on `symfony/ai-generic-platform` (installed as a dependency). `minimum-stability` is `beta` because of the pre-release.
 
-## Choix techniques de l'étape 0
+## Technical choices of step 0
 
-- **Variables d'environnement :** convention Symfony (`.env` versionné avec des valeurs par défaut, secrets dans `.env.local`) plutôt que le `.env.dist` du doc de cadrage.
-- **Serveur web :** FrankenPHP (image `dunglas/frankenphp`), un seul conteneur pour l'appli.
-- **Serveur MCP :** un serveur `pii_radar`, exposé en STDIO (`bin/console mcp:server`) et en HTTP (`/mcp/pii_radar`). Les éléments sont découverts dans `App\Infrastructure\Mcp\`.
+- **Environment variables:** Symfony convention (versioned `.env` with defaults, secrets in `.env.local`) rather than the `.env.dist` of the scoping document.
+- **Web server:** FrankenPHP (`dunglas/frankenphp` image), a single container for the app.
+- **MCP server:** a `pii_radar` server, exposed over STDIO (`bin/console mcp:server`) and HTTP (`/mcp/pii_radar`). Elements are discovered in `App\Infrastructure\Mcp\`.

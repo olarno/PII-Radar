@@ -54,7 +54,7 @@ final class RegisterTest extends KernelTestCase
         self::assertSame(['patients.telephone', 'patients.prenom', 'patients.nom'], array_map('strval', $thirdParties[0]->fields));
 
         $mails = array_values(array_filter(self::register()->recipients, static fn (Recipient $recipient): bool => $recipient->dataSubject));
-        self::assertSame(['Courriel (patients.courriel)'], array_map(static fn (Recipient $recipient): string => $recipient->name, $mails));
+        self::assertSame(['E-mail (patients.courriel)'], array_map(static fn (Recipient $recipient): string => $recipient->name, $mails));
         self::assertFalse($mails[0]->isOutsideQuebec());
     }
 
@@ -66,36 +66,36 @@ final class RegisterTest extends KernelTestCase
         }
         self::assertSame(['patients' => [], 'users' => [], 'rendezvous' => ['cron/purge_rendezvous.php:6'], 'paiements' => []], $deletions);
 
-        $measures = array_map(static fn ($measure): string => $measure->description.' : '.implode(', ', self::strings($measure->evidence)), self::register()->measures);
-        self::assertContains('Écritures de renseignements personnels sans concaténation SQL (requêtes préparées) : public/paiement.php:7, public/rendezvous.php:7', $measures);
+        $measures = array_map(static fn ($measure): string => $measure->description.': '.implode(', ', self::strings($measure->evidence)), self::register()->measures);
+        self::assertContains('Personal information written without SQL concatenation (prepared statements): public/paiement.php:7, public/rendezvous.php:7', $measures);
         self::assertCount(14, self::register()->gaps);
     }
 
-    public function testTheLoi25DraftNeverGuessesWhatTheCodeCannotTell(): void
+    public function testTheLaw25DraftNeverGuessesWhatTheCodeCannotTell(): void
     {
-        $markdown = self::render(RegisterFormat::Loi25);
+        $markdown = self::render(RegisterFormat::Law25);
 
-        self::assertStringStartsWith('# Inventaire des renseignements personnels : legacy-app (brouillon)', $markdown);
-        self::assertStringContainsString('pas un avis juridique', $markdown);
-        self::assertStringContainsString('| `patients.nam` | Élevée | db/01-schema.sql:11 | public/inscription.php:8 | _À confirmer par le responsable_ |', $markdown);
-        self::assertStringContainsString('**Renseignements sensibles** (art. 12) : `patients.nam`, `rendezvous.motif`.', $markdown);
-        self::assertStringContainsString('**Communication hors Québec : une EFVP est requise avant la communication', $markdown);
+        self::assertStringStartsWith('# Personal information inventory: legacy-app (draft)', $markdown);
+        self::assertStringContainsString('not legal advice', $markdown);
+        self::assertStringContainsString('| `patients.nam` | High | db/01-schema.sql:11 | public/inscription.php:8 | _To be confirmed by the person in charge_ |', $markdown);
+        self::assertStringContainsString('**Sensitive information** (s. 12): `patients.nam`, `rendezvous.motif`.', $markdown);
+        self::assertStringContainsString('**Communication outside Quebec: a PIA is required before the communication', $markdown);
         self::assertStringContainsString('| rendezvous | 1 | cron/purge_rendezvous.php:6 |', $markdown);
-        self::assertStringContainsString('- [ ] Réaliser l\'EFVP et signer une entente écrite avec api.twilio.com.', $markdown);
-        self::assertMatchesRegularExpression('/- `rendezvous\.motif` : .+/', $markdown, 'The agent\'s justification is quoted.');
+        self::assertStringContainsString('- [ ] Carry out the PIA and sign a written agreement with api.twilio.com.', $markdown);
+        self::assertMatchesRegularExpression('/- `rendezvous\.motif`: .+/', $markdown, 'The agent\'s justification is quoted.');
         self::assertStringNotContainsString('&#', $markdown, 'Markdown, not HTML.');
-        self::assertStringContainsString('14 lacunes : 2 critiques, 5 élevées, 7 moyennes.', $markdown);
-        self::assertSame(1 + 16 + 1 + 4 + 2, substr_count($markdown, '_À confirmer par le responsable_'), 'The warning, one purpose per field, the responsible person, one retention period per table, the purpose and the agreement of the third party.');
+        self::assertStringContainsString('14 gaps: 2 critical, 5 high, 7 medium.', $markdown);
+        self::assertSame(1 + 16 + 1 + 4 + 2, substr_count($markdown, '_To be confirmed by the person in charge_'), 'The warning, one purpose per field, the responsible person, one retention period per table, the purpose and the agreement of the third party.');
     }
 
     public function testTheGdprDraftFollowsArticle30(): void
     {
         $markdown = self::render(RegisterFormat::Gdpr);
 
-        self::assertStringStartsWith('# Registre des activités de traitement : legacy-app (brouillon, art. 30 RGPD)', $markdown);
-        self::assertStringContainsString('**Catégories particulières (art. 9)** : `rendezvous.motif`.', $markdown);
-        self::assertStringContainsString('**Numéros d\'identification nationaux (art. 87)** : `patients.nam`.', $markdown);
-        self::assertStringContainsString('- api.twilio.com : États-Unis. Garanties', $markdown);
+        self::assertStringStartsWith('# Record of processing activities: legacy-app (draft, GDPR art. 30)', $markdown);
+        self::assertStringContainsString('**Special categories (art. 9)**: `rendezvous.motif`.', $markdown);
+        self::assertStringContainsString('**National identification numbers (art. 87)**: `patients.nam`.', $markdown);
+        self::assertStringContainsString('- api.twilio.com: United States. Safeguards', $markdown);
     }
 
     private static function render(RegisterFormat $format): string

@@ -26,6 +26,6 @@ final class FieldVerdict
     #[Schema(description: 'How sure you are, from 0 to 1', minimum: 0, maximum: 1)]
     public float $confidence = 0.0;
 
-    #[Schema(description: 'One sentence in French citing the evidence (table purpose, code usage)')]
+    #[Schema(description: 'One sentence in English citing the evidence (table purpose, code usage)')]
     public string $justification = '';
 }

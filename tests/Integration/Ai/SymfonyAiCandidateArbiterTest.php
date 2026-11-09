@@ -47,10 +47,10 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
     {
         $arbiter = $this->arbiter([
             new ToolCallResult([new ToolCall('call_1', 'read_code_snippet', ['file' => 'src/patients.php', 'line' => 2])]),
-            new TextResult("patients.nom | personal data: yes | identity | medium | 0.95 | Nom d'un patient, journalisé dans src/patients.php.\nville_reference.nom | personal data: no | location | low | 0.9 | Liste de référence des villes."),
+            new TextResult("patients.nom | personal data: yes | identity | medium | 0.95 | Name of a patient, logged in src/patients.php.\nville_reference.nom | personal data: no | location | low | 0.9 | Reference list of cities."),
             new TextResult((string) json_encode(['verdicts' => [
-                ['field' => 'patients.nom', 'isPersonalData' => true, 'category' => 'identity', 'sensitivity' => 'medium', 'confidence' => 0.95, 'justification' => 'Nom d\'un patient, journalisé dans src/patients.php.'],
-                ['field' => 'ville_reference.nom', 'isPersonalData' => false, 'category' => 'location', 'sensitivity' => 'low', 'confidence' => 0.9, 'justification' => 'Liste de référence des villes, sans lien avec une personne.'],
+                ['field' => 'patients.nom', 'isPersonalData' => true, 'category' => 'identity', 'sensitivity' => 'medium', 'confidence' => 0.95, 'justification' => 'Name of a patient, logged in src/patients.php.'],
+                ['field' => 'ville_reference.nom', 'isPersonalData' => false, 'category' => 'location', 'sensitivity' => 'low', 'confidence' => 0.9, 'justification' => 'Reference list of cities, unrelated to any person.'],
             ]])),
         ]);
 
@@ -72,10 +72,10 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         self::assertSame(DecisionSource::Agent, $decisions[0]->decidedBy);
         self::assertSame(0.95, $decisions[0]->confidence);
         self::assertFalse($decisions[1]->personal);
-        self::assertSame('Liste de référence des villes, sans lien avec une personne.', $decisions[1]->justification);
+        self::assertSame('Reference list of cities, unrelated to any person.', $decisions[1]->justification);
 
         $sentBack = (string) json_encode($this->payloads[1]);
-        self::assertStringContainsString('[COURRIEL]', $sentBack, 'The tool result reached the model, masked.');
+        self::assertStringContainsString('[EMAIL]', $sentBack, 'The tool result reached the model, masked.');
         self::assertStringNotContainsString('jeanne', $sentBack);
         self::assertStringNotContainsString('TREJ85011512', $sentBack);
         self::assertStringContainsString('ville_reference (id, nom)', (string) json_encode($this->payloads[0]), 'The prompt describes the schema.');
@@ -89,13 +89,13 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         $decisions = $arbiter->arbitrate(self::PROJECT, $schema, $flows, $candidates)->decisions;
 
         self::assertSame(DecisionSource::Rules, $decisions[1]->decidedBy);
-        self::assertStringContainsString('pas rendu de verdict', $decisions[1]->justification);
+        self::assertStringContainsString('gave no verdict', $decisions[1]->justification);
     }
 
     public function testVerdictFieldsAreMatchedLooselyButNeverAmbiguously(): void
     {
         $arbiter = $this->arbiter([
-            new TextResult('Enquête terminée.'),
+            new TextResult('Investigation done.'),
             new TextResult('{"verdicts": [{"field": "`Patients.Nom`", "isPersonalData": true, "category": "identity", "sensitivity": "medium", "confidence": 0.9, "justification": "Nom du patient."}, {"field": "nom", "isPersonalData": false, "category": "location", "sensitivity": "low", "confidence": 0.9, "justification": "Ambigu."}]}'),
         ]);
 
@@ -109,7 +109,7 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
     public function testTheWrittenConclusionsBackUpMissingVerdicts(): void
     {
         $arbiter = $this->arbiter([
-            new TextResult("Analyse faite.\n\n- `ville_reference.nom | personal data: no | location | low | 0.92 | Référentiel de villes utilisé pour un menu déroulant.`\npatients.nom | personal data: yes | identity | medium | confidence 0.9 | Nom des patients, journalisé."),
+            new TextResult("Analysis done.\n\n- `ville_reference.nom | personal data: no | location | low | 0.92 | City reference list used for a drop-down menu.`\npatients.nom | personal data: yes | identity | medium | confidence 0.9 | Patient names, logged."),
             new TextResult('{"verdicts": []}'),
         ]);
 
@@ -120,8 +120,8 @@ final class SymfonyAiCandidateArbiterTest extends TestCase
         self::assertFalse($arbitration->decisions[1]->personal);
         self::assertSame(DecisionSource::Agent, $arbitration->decisions[1]->decidedBy);
         self::assertSame(0.92, $arbitration->decisions[1]->confidence);
-        self::assertSame('Référentiel de villes utilisé pour un menu déroulant.', $arbitration->decisions[1]->justification);
-        self::assertStringContainsString('Analyse faite.', (string) $arbitration->conclusions);
+        self::assertSame('City reference list used for a drop-down menu.', $arbitration->decisions[1]->justification);
+        self::assertStringContainsString('Analysis done.', (string) $arbitration->conclusions);
         self::assertSame([], $arbitration->rawVerdicts);
     }
 

@@ -67,7 +67,7 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
             );
         } catch (\Throwable $exception) {
             $providerError = $this->httpClient?->lastError();
-            throw new ArbitrationFailed(\sprintf('L\'agent n\'a pas pu arbitrer les candidats : %s%s', $exception->getMessage(), null === $providerError ? '' : \sprintf(' (réponse du fournisseur : %s)', $providerError)), $exception instanceof AuthenticationException, $exception);
+            throw new ArbitrationFailed(\sprintf('The agent could not arbitrate the candidates: %s%s', $exception->getMessage(), null === $providerError ? '' : \sprintf(' (provider response: %s)', $providerError)), $exception instanceof AuthenticationException, $exception);
         } finally {
             $this->session->end();
         }
@@ -95,13 +95,13 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
                     $candidate->category,
                     $candidate->sensitivity,
                     $candidate->confidence,
-                    'L\'agent n\'a pas rendu de verdict : décision de l\'heuristique. '.$candidate->reason,
+                    'The agent gave no verdict: the heuristic decides. '.$candidate->reason,
                     DecisionSource::Rules,
                 ),
             };
         }
 
-        $rawVerdicts = array_map(static fn (FieldVerdict $verdict): string => \sprintf('%s → %s', '' === $verdict->field ? '(colonne vide)' : $verdict->field, $verdict->isPersonalData ? 'oui' : 'non'), $result->verdicts);
+        $rawVerdicts = array_map(static fn (FieldVerdict $verdict): string => \sprintf('%s → %s', '' === $verdict->field ? '(empty column)' : $verdict->field, $verdict->isPersonalData ? 'yes' : 'no'), $result->verdicts);
 
         return new Arbitration($decisions, $usage, trim($conclusions), $rawVerdicts);
     }
@@ -165,7 +165,7 @@ final readonly class SymfonyAiCandidateArbiter implements CandidateArbiter
             PiiCategory::tryFrom($verdict->category) ?? $candidate->category,
             Sensitivity::tryFrom($verdict->sensitivity) ?? $candidate->sensitivity,
             round(max(0.0, min(1.0, $verdict->confidence)), 2),
-            '' === $justification ? 'Décision de l\'agent, sans justification.' : $justification,
+            '' === $justification ? 'Decided by the agent, without justification.' : $justification,
             DecisionSource::Agent,
         );
     }

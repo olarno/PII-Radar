@@ -23,11 +23,11 @@ final readonly class WhereIsTool
 
     #[McpTool(
         name: 'pii_where_is',
-        description: 'Où vit une donnée personnelle dans l\'application auditée (« courriel du patient », « téléphone », patients.nam) : colonne, classification, flux dans le code, findings. Lit le dernier scan, sans coût.',
+        description: 'Where a piece of personal data lives in the audited application ("patient email", "phone", patients.nam): column, classification, code flows, findings. Reads the last scan, at no cost.',
         annotations: new ToolAnnotations(readOnlyHint: true, openWorldHint: false),
     )]
     public function __invoke(
-        #[Schema(description: 'La donnée cherchée, en langage naturel (français ou anglais) ou sous la forme table.colonne')]
+        #[Schema(description: 'The data to find, in natural language (English or French) or as table.column')]
         string $data,
     ): string {
         try {
@@ -38,17 +38,17 @@ final readonly class WhereIsTool
 
         $sheets = $this->queries->whereIs($stored->report, $data);
         if ([] === $sheets) {
-            return \sprintf("Aucune donnée personnelle ne correspond à « %s ».\n\n%s", $data, $this->format->provenance($stored));
+            return \sprintf("No personal data matches \"%s\".\n\n%s", $data, $this->format->provenance($stored));
         }
 
         $shown = \array_slice($sheets, 0, self::MAX_RESULTS);
         $blocks = array_map(fn ($sheet): string => $this->format->brief($sheet), $shown);
 
         return \sprintf(
-            "%d emplacement(s) pour « %s »%s.\n\n%s\n\n%s",
+            "%d place(s) for \"%s\"%s.\n\n%s\n\n%s",
             \count($sheets),
             $data,
-            \count($sheets) > self::MAX_RESULTS ? \sprintf(', les %d plus pertinents', self::MAX_RESULTS) : '',
+            \count($sheets) > self::MAX_RESULTS ? \sprintf(', the %d most relevant', self::MAX_RESULTS) : '',
             implode("\n\n", $blocks),
             $this->format->provenance($stored),
         );

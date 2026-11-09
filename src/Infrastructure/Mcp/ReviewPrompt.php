@@ -24,39 +24,39 @@ final readonly class ReviewPrompt
      */
     #[McpPrompt(
         name: 'pii-review',
-        title: 'Revue de PR sous l\'angle des données personnelles',
-        description: 'Revoit un diff au regard des données personnelles de l\'application auditée (Loi 25, RGPD) et des règles PII-001 à PII-008.',
+        title: 'Personal data review of a pull request',
+        description: 'Reviews a diff against the personal data of the audited application (Quebec Law 25, GDPR) and the rules PII-001 to PII-008.',
     )]
     public function __invoke(string $diff): array
     {
         if ('' === trim($diff)) {
-            throw new PromptGetException('Collez le diff à revoir dans l\'argument « diff ».');
+            throw new PromptGetException('Paste the diff to review in the "diff" argument.');
         }
 
         try {
             $fields = array_values(array_filter($this->project->report()->report->classifiedFields, static fn ($field): bool => $field->personal));
-            $inventory = implode("\n", array_map(static fn ($field): string => \sprintf('- %s : %s, sensibilité %s', $field->column->reference, mb_strtolower($field->category->label()), mb_strtolower($field->sensitivity->label())), $fields));
+            $inventory = implode("\n", array_map(static fn ($field): string => \sprintf('- %s: %s, %s sensitivity', $field->column->reference, mb_strtolower($field->category->label()), mb_strtolower($field->sensitivity->label())), $fields));
         } catch (NoReport) {
-            $inventory = '(aucun scan : appelez d\'abord l\'outil pii_scan)';
+            $inventory = '(no scan yet: call the pii_scan tool first)';
         }
         $rules = [];
         foreach ($this->rules as $rule) {
-            $rules[$rule->id()] = \sprintf('- %s : %s', $rule->id(), $rule->title());
+            $rules[$rule->id()] = \sprintf('- %s: %s', $rule->id(), $rule->title());
         }
         ksort($rules);
 
         return [[
             'role' => 'user',
             'content' => <<<PROMPT
-                Revois ce diff sous l'angle des données personnelles (Loi 25 au Québec, RGPD).
+                Review this diff for personal data (Quebec Law 25, GDPR).
 
-                Données personnelles connues de l'application :
+                Personal data known in the application:
                 {$inventory}
 
-                Règles à vérifier :
+                Rules to check:
                 {$this->lines($rules)}
 
-                Pour chaque ajout qui touche une donnée personnelle : cite le fichier et la ligne, la règle concernée et le correctif. Avant de valider un nouveau log, appelle l'outil pii_can_i_log ; pour situer une donnée, pii_where_is. Termine par un verdict : à corriger avant fusion, ou acceptable.
+                For each change that touches personal data: give the file and line, the rule concerned and the fix. Before accepting a new log, call the pii_can_i_log tool; to locate a piece of data, pii_where_is. End with a verdict: fix before merging, or acceptable.
 
                 ```diff
                 {$diff}

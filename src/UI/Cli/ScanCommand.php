@@ -18,7 +18,7 @@ use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'pii:scan', description: 'Scanne une application PHP et liste où elle stocke des données personnelles.')]
+#[AsCommand(name: 'pii:scan', description: 'Scans a PHP application and lists where it stores personal data.')]
 final readonly class ScanCommand
 {
     public function __construct(
@@ -30,19 +30,19 @@ final readonly class ScanCommand
 
     public function __invoke(
         SymfonyStyle $io,
-        #[Argument(description: 'Dossier racine de l\'application auditée')] string $path,
-        #[Option(description: 'Format de sortie : table ou json')] string $format = 'table',
-        #[Option(name: 'no-ai', description: 'Sans l\'agent : l\'heuristique décide seule des candidats ambigus')] bool $noAi = false,
-        #[Option(description: 'Démo sans token : rejoue un vrai appel Hugging Face enregistré sur demo/legacy-app')] bool $replay = false,
+        #[Argument(description: 'Root folder of the audited application')] string $path,
+        #[Option(description: 'Output format: table or json')] string $format = 'table',
+        #[Option(name: 'no-ai', description: 'Without the agent: the heuristic alone decides ambiguous candidates')] bool $noAi = false,
+        #[Option(description: 'Demo without a token: replays a real recorded Hugging Face call on demo/legacy-app')] bool $replay = false,
     ): int {
         if (!\in_array($format, ['table', 'json'], true)) {
-            $io->error(\sprintf('Format "%s" inconnu : utilisez table ou json.', $format));
+            $io->error(\sprintf('Unknown format "%s": use table or json.', $format));
 
             return Command::INVALID;
         }
 
         if ($replay && $noAi) {
-            $io->error('--replay rejoue l\'agent : il ne se combine pas avec --no-ai.');
+            $io->error('--replay replays the agent: it cannot be combined with --no-ai.');
 
             return Command::INVALID;
         }
@@ -60,8 +60,8 @@ final readonly class ScanCommand
             $io->error([
                 $exception->getMessage(),
                 $exception->authentication
-                    ? 'Vérifiez HUGGINGFACE_API_KEY dans .env.local, ou relancez avec --no-ai pour un scan sans agent.'
-                    : 'Le fournisseur a refusé la requête. Essayez un autre modèle (PII_RADAR_MODEL), ou relancez avec --no-ai pour un scan sans agent.',
+                    ? 'Check HUGGINGFACE_API_KEY in .env.local, or run again with --no-ai for a scan without the agent.'
+                    : 'The provider rejected the request. Try another model (PII_RADAR_MODEL), or run again with --no-ai for a scan without the agent.',
             ]);
 
             return Command::FAILURE;
@@ -81,7 +81,7 @@ final readonly class ScanCommand
         $io->section('Findings');
         $io->text(\sprintf('%d findings.', \count($report->findings)));
         $io->table(
-            ['Règle', 'Sévérité', 'Emplacement', 'Constat', 'Correctif'],
+            ['Rule', 'Severity', 'Location', 'Finding', 'Fix'],
             array_map(static fn (Finding $finding): array => [
                 $finding->rule,
                 $finding->severity->label(),
@@ -91,35 +91,35 @@ final readonly class ScanCommand
             ], $report->findings),
         );
 
-        $io->section('Données personnelles');
+        $io->section('Personal data');
         $io->text(\sprintf(
-            '%d tables, %d colonnes lues, %d candidates. %s',
+            '%d tables, %d columns read, %d candidates. %s',
             $tableCount,
             $columnCount,
             \count($report->candidates),
             match (true) {
-                $report->replayed => 'Les candidats ambigus ont été arbitrés par l\'agent, réponses rejouées depuis un vrai appel enregistré.',
-                $report->arbitrated => 'Les candidats ambigus ont été arbitrés par l\'agent.',
-                default => 'Sans agent : l\'heuristique a décidé seule.',
+                $report->replayed => 'Ambiguous candidates were arbitrated by the agent, answers replayed from a real recorded call.',
+                $report->arbitrated => 'Ambiguous candidates were arbitrated by the agent.',
+                default => 'Without the agent: the heuristic decided alone.',
             },
         ));
         $io->table(
-            ['Champ', 'Donnée perso.', 'Catégorie', 'Sensibilité', 'Confiance', 'Décidé par', 'Justification'],
+            ['Field', 'Personal', 'Category', 'Sensitivity', 'Confidence', 'Decided by', 'Justification'],
             array_map(static fn (ClassifiedField $field): array => [
                 (string) $field->column->reference,
-                $field->personal ? 'Oui' : 'Non',
+                $field->personal ? 'Yes' : 'No',
                 $field->category->label(),
                 $field->sensitivity->label(),
-                \sprintf('%d %%', (int) round($field->confidence * 100)),
-                'agent' === $field->decidedBy->value ? 'Agent' : 'Règles',
+                \sprintf('%d%%', (int) round($field->confidence * 100)),
+                'agent' === $field->decidedBy->value ? 'Agent' : 'Rules',
                 wordwrap($field->justification, 50),
             ], $report->classifiedFields),
         );
 
-        $io->section('Flux dans le code');
-        $io->text(\sprintf('%d points de flux.', \count($report->flows)));
+        $io->section('Code flows');
+        $io->text(\sprintf('%d flow points.', \count($report->flows)));
         $io->table(
-            ['Opération', 'Emplacement', 'Cible', 'Champs', 'Concaténés en SQL'],
+            ['Operation', 'Location', 'Target', 'Fields', 'Concatenated in SQL'],
             array_map(static fn (FlowPoint $flow): array => [
                 $flow->operation->label(),
                 (string) $flow->location,
@@ -130,20 +130,20 @@ final readonly class ScanCommand
         );
 
         if (null !== $report->arbitration && $io->isVerbose()) {
-            $io->section('Agent : conclusions de l\'enquête');
-            $io->text('' === (string) $report->arbitration->conclusions ? '(aucune conclusion écrite)' : (string) $report->arbitration->conclusions);
-            $io->section('Agent : verdicts structurés reçus');
-            $io->listing([] === $report->arbitration->rawVerdicts ? ['(aucun verdict)'] : $report->arbitration->rawVerdicts);
+            $io->section('Agent: investigation conclusions');
+            $io->text('' === (string) $report->arbitration->conclusions ? '(no written conclusion)' : (string) $report->arbitration->conclusions);
+            $io->section('Agent: structured verdicts received');
+            $io->listing([] === $report->arbitration->rawVerdicts ? ['(no verdict)'] : $report->arbitration->rawVerdicts);
         }
 
         if ($report->replayed) {
-            $io->note(\sprintf('Rejeu : les réponses du modèle viennent de %s, un vrai appel Hugging Face enregistré. Aucune clé, aucun appel réseau, aucun coût.', basename($this->replay->recording())));
+            $io->note(\sprintf('Replay: the model answers come from %s, a real recorded Hugging Face call. No key, no network call, no cost.', basename($this->replay->recording())));
         } elseif (null !== $report->agentUsage) {
             $io->note(\sprintf(
-                'Agent : %d appel(s) au modèle, %s tokens en entrée, %s en sortie.',
+                'Agent: %d model call(s), %s input tokens, %s output tokens.',
                 $report->agentUsage->calls,
-                null === $report->agentUsage->inputTokens ? '?' : number_format($report->agentUsage->inputTokens, 0, ',', ' '),
-                null === $report->agentUsage->outputTokens ? '?' : number_format($report->agentUsage->outputTokens, 0, ',', ' '),
+                null === $report->agentUsage->inputTokens ? '?' : number_format($report->agentUsage->inputTokens),
+                null === $report->agentUsage->outputTokens ? '?' : number_format($report->agentUsage->outputTokens),
             ));
         }
 

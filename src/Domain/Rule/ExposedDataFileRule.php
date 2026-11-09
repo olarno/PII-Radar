@@ -20,7 +20,7 @@ final class ExposedDataFileRule implements Rule
 
     public function title(): string
     {
-        return 'Export ou dump dans le webroot';
+        return 'Export or dump in the webroot';
     }
 
     public function evaluate(AuditContext $context): array
@@ -40,8 +40,8 @@ final class ExposedDataFileRule implements Rule
                 Severity::Critical,
                 $file->location,
                 self::preferTable($fields),
-                \sprintf('%s est téléchargeable publiquement%s.', $file->location->file, [] === $fields ? '' : \sprintf(' et contient %d champ(s) personnel(s)', \count(self::preferTable($fields)))),
-                'Supprimer le fichier ou le déplacer hors du webroot, et bloquer ces extensions dans la configuration du serveur web.',
+                \sprintf('%s can be downloaded publicly%s.', $file->location->file, [] === $fields ? '' : \sprintf(' and holds %d personal field(s)', \count(self::preferTable($fields)))),
+                'Delete the file or move it out of the webroot, and block these extensions in the web server configuration.',
             );
         }
 

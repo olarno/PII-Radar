@@ -22,7 +22,7 @@ final class PersonalDataInLogsRule implements Rule
 
     public function title(): string
     {
-        return 'Donnée personnelle écrite dans un journal';
+        return 'Personal data written to a log';
     }
 
     public function evaluate(AuditContext $context): array
@@ -39,8 +39,8 @@ final class PersonalDataInLogsRule implements Rule
                 Sensitivity::High === $context->highestSensitivity($fields) ? Severity::High : Severity::Medium,
                 $flow->location,
                 $fields,
-                \sprintf('%s écrit dans le journal %s.', self::list($fields), $flow->target ?? 'applicatif'),
-                'Masquer les données personnelles avant de journaliser, par exemple avec un processor Monolog de masquage, et ne journaliser que des identifiants techniques.',
+                \sprintf('%s written to the %s log.', self::list($fields), $flow->target ?? 'application'),
+                'Mask personal data before logging, for example with a masking Monolog processor, and log technical identifiers only.',
             );
         }
 
