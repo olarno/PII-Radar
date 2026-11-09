@@ -42,7 +42,7 @@ final class MermaidFlowMap
             foreach ($tables as $table) {
                 // Nodes are created with their edge only: a table that is merely read does not clutter the map.
                 match ($flow->operation) {
-                    FlowOperation::Collect => $this->edge($this->node('file:'.$flow->location->file, '📝 '.$flow->location->file, 'source'), $this->tableNode($table), 'collecte'),
+                    FlowOperation::Collect => $this->edge($this->node('file:'.$flow->location->file, '📝 '.$flow->location->file, 'source'), $this->tableNode($table), 'collect'),
                     FlowOperation::Log => $this->edge($this->tableNode($table), $this->node('log:'.$flow->target, '📄 '.$flow->target, 'danger'), (string) $flow->location),
                     FlowOperation::Send => $this->edge($this->tableNode($table), $this->recipient($flow, $foreign), (string) $flow->location),
                     default => null,
@@ -55,7 +55,7 @@ final class MermaidFlowMap
             }
         }
 
-        return $this->render('Aucun flux de données personnelles.');
+        return $this->render('No personal data flow.');
     }
 
     public function field(FieldSheet $sheet, ScanReport $report): string
@@ -66,10 +66,10 @@ final class MermaidFlowMap
 
         foreach ($sheet->flows as $flow) {
             match ($flow->operation) {
-                FlowOperation::Collect => $this->edge($this->node('file:'.$flow->location->file, '📝 '.$flow->location->file, 'source'), $field, 'collecte'),
+                FlowOperation::Collect => $this->edge($this->node('file:'.$flow->location->file, '📝 '.$flow->location->file, 'source'), $field, 'collect'),
                 FlowOperation::Log => $this->edge($field, $this->node('log:'.$flow->target, '📄 '.$flow->target, $sheet->isPersonal() ? 'danger' : 'sink'), (string) $flow->location),
                 FlowOperation::Send => $this->edge($field, $this->recipient($flow, $foreign), (string) $flow->location),
-                FlowOperation::Read => $this->edge($field, $this->node('read:'.$flow->location->file, '👁️ '.$flow->location->file, 'sink'), 'lecture'),
+                FlowOperation::Read => $this->edge($field, $this->node('read:'.$flow->location->file, '👁️ '.$flow->location->file, 'sink'), 'read'),
                 FlowOperation::Hash => $this->edge($field, $this->node('hash:'.$flow->target, '🔒 '.$flow->target, 'md5' === $flow->target || 'sha1' === $flow->target ? 'danger' : 'sink'), (string) $flow->location),
                 default => null,
             };
@@ -80,7 +80,7 @@ final class MermaidFlowMap
             }
         }
 
-        return $this->render('Aucun flux pour ce champ.');
+        return $this->render('No flow for this field.');
     }
 
     /**
@@ -90,10 +90,10 @@ final class MermaidFlowMap
     {
         $target = (string) $flow->target;
         if (str_starts_with($target, 'mail:')) {
-            return $this->node('mail:'.$target, '✉️ courriel ('.substr($target, 5).')', 'sink');
+            return $this->node('mail:'.$target, '✉️ e-mail ('.substr($target, 5).')', 'sink');
         }
 
-        return $this->node('host:'.$target, '🌐 '.$target.(isset($foreign[$target]) ? ' (hors Québec)' : ''), isset($foreign[$target]) ? 'danger' : 'sink');
+        return $this->node('host:'.$target, '🌐 '.$target.(isset($foreign[$target]) ? ' (outside Quebec)' : ''), isset($foreign[$target]) ? 'danger' : 'sink');
     }
 
     private function tableNode(string $table): string

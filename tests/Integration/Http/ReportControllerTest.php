@@ -27,15 +27,15 @@ final class ReportControllerTest extends WebTestCase
         $crawler = $this->client->request('GET', '/report');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Rapport de données personnelles');
-        self::assertSelectorTextContains('h2', 'Carte des flux');
+        self::assertSelectorTextContains('h1', 'Personal data report');
+        self::assertSelectorTextContains('h2', 'Flow map');
         self::assertCount(14, $crawler->filter('#findings tbody tr'));
         self::assertCount(16, $crawler->filter('#personal tbody tr'));
         self::assertStringContainsString('ville_reference.nom', $crawler->filter('#rejected')->text(), 'Rejected traps are listed apart, with the agent\'s reason.');
 
         $map = $crawler->filter('pre.mermaid')->text();
         self::assertStringStartsWith('flowchart LR', $map);
-        self::assertStringContainsString('🌐 api.twilio.com (hors Québec)"]:::danger', $map);
+        self::assertStringContainsString('🌐 api.twilio.com (outside Quebec)"]:::danger', $map);
         self::assertStringContainsString('⚠️ public/export_patients.csv (public)"]:::danger', $map);
         self::assertStringNotContainsString('ville_reference', $map);
     }
@@ -45,7 +45,7 @@ final class ReportControllerTest extends WebTestCase
         self::getContainer()->get(ScanProject::class)(self::getContainer()->getParameter('kernel.project_dir').'/demo/legacy-app', replayed: true);
         $this->client->request('GET', '/report');
 
-        self::assertSelectorTextContains('p.muted', 'réponses rejouées depuis un vrai appel Hugging Face enregistré');
+        self::assertSelectorTextContains('p.muted', 'answers replayed from a real recorded Hugging Face call');
     }
 
     public function testAFieldPageShowsItsJourneyAndWhetherItMayBeLogged(): void
@@ -55,7 +55,7 @@ final class ReportControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'patients.nam');
-        self::assertSame('Non', $crawler->filter('.card strong')->last()->text(), 'Journalisable ? Non');
+        self::assertSame('No', $crawler->filter('.card strong')->last()->text(), 'Can be logged? No');
         self::assertStringContainsString('📄 error_log"]:::danger', $crawler->filter('pre.mermaid')->text());
         self::assertCount(5, $crawler->filter('#findings li'));
     }
@@ -71,12 +71,12 @@ final class ReportControllerTest extends WebTestCase
     public function testTheRegisterIsDownloadedAsMarkdown(): void
     {
         $this->scan();
-        $this->client->request('GET', '/report/registre-rgpd.md');
+        $this->client->request('GET', '/report/register-gdpr.md');
 
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('Content-Type', 'text/markdown; charset=UTF-8');
-        self::assertResponseHeaderSame('Content-Disposition', 'attachment; filename="registre-rgpd.md"');
-        self::assertStringStartsWith('# Registre des activités de traitement', (string) $this->client->getResponse()->getContent());
+        self::assertResponseHeaderSame('Content-Disposition', 'attachment; filename="register-gdpr.md"');
+        self::assertStringStartsWith('# Record of processing activities', (string) $this->client->getResponse()->getContent());
     }
 
     public function testWithoutAScanThePageSaysHowToRunOne(): void
@@ -85,7 +85,7 @@ final class ReportControllerTest extends WebTestCase
         $this->client->request('GET', '/report');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Aucun scan');
+        self::assertSelectorTextContains('h1', 'No scan');
         self::assertSelectorTextContains('pre', 'pii:scan');
     }
 

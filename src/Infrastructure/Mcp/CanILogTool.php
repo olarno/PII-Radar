@@ -23,11 +23,11 @@ final readonly class CanILogTool
 
     #[McpTool(
         name: 'pii_can_i_log',
-        description: 'Un champ peut-il être écrit dans un journal (error_log, Monolog, fichier) ? Répond oui, à éviter ou non, avec la règle, l\'alternative et les journaux qui l\'écrivent déjà. À appeler avant d\'ajouter un log.',
+        description: 'May a field be written to a log (error_log, Monolog, file)? Answers yes, avoid or no, with the rule, the alternative and the logs that already write it. Call it before adding a log.',
         annotations: new ToolAnnotations(readOnlyHint: true, openWorldHint: false),
     )]
     public function __invoke(
-        #[Schema(description: 'Le champ, sous la forme table.colonne (ou le nom de colonne seul s\'il est unique), par exemple patients.nam')]
+        #[Schema(description: 'The field as table.column (or the bare column name when it is unique), e.g. patients.nam')]
         string $field,
     ): string {
         try {
@@ -38,7 +38,7 @@ final readonly class CanILogTool
 
         $columns = $this->queries->resolve($stored->report, $field);
         if ([] === $columns) {
-            throw new ToolCallException(\sprintf('Champ « %s » inconnu du schéma audité. Utilisez pii_where_is pour le trouver.', $field));
+            throw new ToolCallException(\sprintf('Field "%s" is not in the audited schema. Use pii_where_is to find it.', $field));
         }
 
         $answers = array_map(fn ($column): string => $this->answer($this->queries->canLog($stored->report, $column)), $columns);
@@ -50,16 +50,16 @@ final readonly class CanILogTool
     {
         $lines = [
             \sprintf('**%s** %s', match ($advice->verdict) {
-                LogVerdict::Allowed => 'Oui.',
-                LogVerdict::Avoid => 'À éviter.',
-                LogVerdict::Forbidden => 'Non.',
+                LogVerdict::Allowed => 'Yes.',
+                LogVerdict::Avoid => 'Avoid it.',
+                LogVerdict::Forbidden => 'No.',
             }, $advice->reason),
             '',
-            'À la place : '.$advice->alternative,
+            'Instead: '.$advice->alternative,
         ];
         if ([] !== $advice->existingLogs && LogVerdict::Allowed !== $advice->verdict) {
             $lines[] = '';
-            $lines[] = 'Déjà journalisé, à corriger :';
+            $lines[] = 'Already logged, to fix:';
             foreach ($advice->existingLogs as $flow) {
                 $lines[] = '- '.$this->format->flow($flow);
             }

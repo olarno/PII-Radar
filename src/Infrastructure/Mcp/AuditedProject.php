@@ -36,6 +36,6 @@ final readonly class AuditedProject
             throw new NoReport($exception->getMessage(), previous: $exception);
         }
 
-        return $report ?? throw new NoReport(\sprintf('Aucun scan de %s pour l\'instant : lancez « bin/console pii:scan %s » ou l\'outil pii_scan.', $this->project, $this->project));
+        return $report ?? throw new NoReport(\sprintf('No scan of %s yet: run "bin/console pii:scan %s" or the pii_scan tool.', $this->project, $this->project));
     }
 }

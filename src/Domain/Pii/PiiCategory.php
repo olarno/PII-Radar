@@ -17,13 +17,13 @@ enum PiiCategory: string
     public function label(): string
     {
         return match ($this) {
-            self::Identity => 'Identité',
-            self::Contact => 'Coordonnées',
-            self::Financial => 'Financier',
-            self::Health => 'Santé',
-            self::GovernmentId => 'Identifiant gouvernemental',
-            self::Location => 'Localisation',
-            self::Technical => 'Technique',
+            self::Identity => 'Identity',
+            self::Contact => 'Contact details',
+            self::Financial => 'Financial',
+            self::Health => 'Health',
+            self::GovernmentId => 'Government identifier',
+            self::Location => 'Location',
+            self::Technical => 'Technical',
         };
     }
 }

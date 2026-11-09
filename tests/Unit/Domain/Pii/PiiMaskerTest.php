@@ -21,14 +21,14 @@ final class PiiMaskerTest extends TestCase
      */
     public static function provideValues(): iterable
     {
-        yield 'e-mail' => ["\$to = 'jeanne.tremblay@example.test';", "\$to = '[COURRIEL]';"];
+        yield 'e-mail' => ["\$to = 'jeanne.tremblay@example.test';", "\$to = '[EMAIL]';"];
         yield 'NAM' => ['// test avec TREJ 8501 1512', '// test avec [NAM]'];
         yield 'NAM compact' => ["'PELX92042136'", "'[NAM]'"];
-        yield 'NAS' => ['NAS : 046 454 286', 'NAS : [NAS]'];
-        yield 'phone' => ['Appeler le 514-803-4803 ou (450) 555-0199', 'Appeler le [TELEPHONE] ou [TELEPHONE]'];
-        yield 'international phone' => ["'+15005550006'", "'[TELEPHONE]'"];
-        yield 'postal code' => ['H2X 1Y4, Montréal', '[CODE_POSTAL], Montréal'];
-        yield 'card' => ['carte 4111 1111 1111 1111', 'carte [CARTE]'];
+        yield 'NAS' => ['NAS : 046 454 286', 'NAS : [SIN]'];
+        yield 'phone' => ['Appeler le 514-803-4803 ou (450) 555-0199', 'Appeler le [PHONE] ou [PHONE]'];
+        yield 'international phone' => ["'+15005550006'", "'[PHONE]'"];
+        yield 'postal code' => ['H2X 1Y4, Montréal', '[POSTAL_CODE], Montréal'];
+        yield 'card' => ['carte 4111 1111 1111 1111', 'carte [CARD]'];
         yield 'IP' => ['derniere_ip = 192.168.1.20', 'derniere_ip = [IP]'];
     }
 

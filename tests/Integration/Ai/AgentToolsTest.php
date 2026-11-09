@@ -41,7 +41,7 @@ final class AgentToolsTest extends TestCase
     {
         $snippet = new ReadCodeSnippetTool($this->session)('src/patients.php', 2);
 
-        self::assertStringContainsString('2 | // Test account: [COURRIEL], NAM [NAM]', $snippet);
+        self::assertStringContainsString('2 | // Test account: [EMAIL], NAM [NAM]', $snippet);
         self::assertStringNotContainsString('jeanne', $snippet);
         self::assertStringNotContainsString('TREJ85011512', $snippet);
     }

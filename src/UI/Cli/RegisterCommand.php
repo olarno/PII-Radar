@@ -17,7 +17,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'pii:register', description: 'Génère le brouillon de registre (Loi 25 ou RGPD) à partir du dernier scan.')]
+#[AsCommand(name: 'pii:register', description: 'Writes the draft register (Quebec Law 25 or GDPR) from the last scan.')]
 final readonly class RegisterCommand
 {
     public function __construct(
@@ -30,14 +30,14 @@ final readonly class RegisterCommand
 
     public function __invoke(
         SymfonyStyle $io,
-        #[Argument(description: 'Dossier de l\'application auditée (par défaut PII_RADAR_PROJECT)')] ?string $path = null,
-        #[Option(description: 'Cadre : loi25 ou rgpd')] string $format = 'loi25',
-        #[Option(description: 'Fichier Markdown à écrire (sinon, sortie standard)')] ?string $output = null,
-        #[Option(description: 'Nom de l\'application dans le registre (par défaut, le nom du dossier)')] ?string $name = null,
+        #[Argument(description: 'Directory of the audited application (PII_RADAR_PROJECT by default)')] ?string $path = null,
+        #[Option(description: 'Framework: law25 or gdpr')] string $format = 'law25',
+        #[Option(description: 'Markdown file to write (standard output otherwise)')] ?string $output = null,
+        #[Option(description: 'Application name in the register (the directory name by default)')] ?string $name = null,
     ): int {
         $registerFormat = RegisterFormat::tryFrom($format);
         if (null === $registerFormat) {
-            $io->error(\sprintf('Cadre « %s » inconnu : utilisez loi25 ou rgpd.', $format));
+            $io->error(\sprintf('Unknown framework "%s": use law25 or gdpr.', $format));
 
             return Command::INVALID;
         }
@@ -51,7 +51,7 @@ final readonly class RegisterCommand
             return Command::FAILURE;
         }
         if (null === $stored) {
-            $io->error(\sprintf('Aucun scan de %s : lancez d\'abord « bin/console pii:scan %s ».', $projectPath, $projectPath));
+            $io->error(\sprintf('No scan of %s: run "bin/console pii:scan %s" first.', $projectPath, $projectPath));
 
             return Command::FAILURE;
         }
@@ -64,11 +64,11 @@ final readonly class RegisterCommand
         }
 
         if (false === file_put_contents($output, $markdown)) {
-            $io->error(\sprintf('Impossible d\'écrire %s.', $output));
+            $io->error(\sprintf('Cannot write %s.', $output));
 
             return Command::FAILURE;
         }
-        $io->success(\sprintf('Registre %s écrit dans %s.', 'rgpd' === $registerFormat->value ? 'RGPD' : 'Loi 25', $output));
+        $io->success(\sprintf('%s register written to %s.', RegisterFormat::Gdpr === $registerFormat ? 'GDPR' : 'Law 25', $output));
 
         return Command::SUCCESS;
     }

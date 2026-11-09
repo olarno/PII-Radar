@@ -27,7 +27,7 @@ final readonly class OutsideQuebecTransferRule implements Rule
 
     public function title(): string
     {
-        return 'Communication de renseignements personnels hors Québec';
+        return 'Personal information communicated outside Quebec';
     }
 
     public function evaluate(AuditContext $context): array
@@ -51,9 +51,9 @@ final readonly class OutsideQuebecTransferRule implements Rule
                 $flow->location,
                 $fields,
                 null === $jurisdiction
-                    ? \sprintf('%s envoyé à %s, dont la juridiction est à confirmer.', implode(', ', array_map('strval', $fields)), $host)
-                    : \sprintf('%s envoyé à %s (%s) : communication hors Québec.', implode(', ', array_map('strval', $fields)), $host, $jurisdiction->label()),
-                'Réaliser une évaluation des facteurs relatifs à la vie privée (EFVP) avant la communication, et l\'encadrer par une entente écrite.',
+                    ? \sprintf('%s sent to %s, whose jurisdiction is to be confirmed.', implode(', ', array_map('strval', $fields)), $host)
+                    : \sprintf('%s sent to %s (%s): communication outside Quebec.', implode(', ', array_map('strval', $fields)), $host, $jurisdiction->label()),
+                'Carry out a privacy impact assessment (PIA, "EFVP" in Quebec) before the communication, and govern it with a written agreement.',
                 $host,
                 $jurisdiction?->value,
             );

@@ -34,23 +34,23 @@ final class MarkdownFormatter
         $lines = [\sprintf('%s %s', $heading, $column->reference)];
         $classification = $sheet->classification;
         if (null === $classification) {
-            $lines[] = '- Donnée personnelle : **non**, rien dans son nom ne le suggère.';
+            $lines[] = '- Personal data: **no**, nothing in its name suggests it.';
         } else {
             $lines[] = \sprintf(
-                '- Donnée personnelle : **%s** · %s, sensibilité %s (confiance %d %%, décidé par %s)',
-                $classification->personal ? 'oui' : 'non',
+                '- Personal data: **%s** · %s, %s sensitivity (confidence %d%%, decided by %s)',
+                $classification->personal ? 'yes' : 'no',
                 $classification->category->label(),
                 mb_strtolower($classification->sensitivity->label()),
                 (int) round($classification->confidence * 100),
-                'agent' === $classification->decidedBy->value ? 'l\'agent' : 'les règles',
+                'agent' === $classification->decidedBy->value ? 'the agent' : 'the rules',
             );
-            $lines[] = '- Justification : '.$classification->justification;
+            $lines[] = '- Justification: '.$classification->justification;
         }
-        $lines[] = \sprintf('- Déclarée : %s (%s%s)', $column->location, $column->type, $column->nullable ? '' : ', NOT NULL');
+        $lines[] = \sprintf('- Declared: %s (%s%s)', $column->location, $column->type, $column->nullable ? '' : ', NOT NULL');
 
         if ([] !== $sheet->flows) {
             $lines[] = '';
-            $lines[] = '**Flux dans le code**';
+            $lines[] = '**Code flows**';
             foreach ($sheet->flows as $flow) {
                 $lines[] = '- '.$this->flow($flow);
             }
@@ -75,25 +75,25 @@ final class MarkdownFormatter
         $classification = $sheet->classification;
         $lines = [\sprintf('### %s', $column->reference)];
         $lines[] = null === $classification
-            ? '- Pas une donnée personnelle.'
-            : \sprintf('- %s, sensibilité %s · %s', $classification->category->label(), mb_strtolower($classification->sensitivity->label()), $classification->justification);
-        $lines[] = \sprintf('- Déclarée : %s', $column->location);
+            ? '- Not personal data.'
+            : \sprintf('- %s, %s sensitivity · %s', $classification->category->label(), mb_strtolower($classification->sensitivity->label()), $classification->justification);
+        $lines[] = \sprintf('- Declared: %s', $column->location);
 
         $operations = [];
         foreach ($sheet->flows as $flow) {
-            $operations[$flow->operation->label()][] = (string) $flow->location.(null === $flow->target || 'Lecture' === $flow->operation->label() ? '' : ' → '.$flow->target);
+            $operations[$flow->operation->label()][] = (string) $flow->location.(null === $flow->target || 'Read' === $flow->operation->label() ? '' : ' → '.$flow->target);
         }
         foreach ($operations as $operation => $places) {
-            $lines[] = \sprintf('- %s : %s%s', $operation, implode(', ', \array_slice($places, 0, 3)), \count($places) > 3 ? \sprintf(' (+%d)', \count($places) - 3) : '');
+            $lines[] = \sprintf('- %s: %s%s', $operation, implode(', ', \array_slice($places, 0, 3)), \count($places) > 3 ? \sprintf(' (+%d)', \count($places) - 3) : '');
         }
         if ([] !== $sheet->findings) {
             // Each rule is named: a bare "PII-007" invites the assistant to guess what it means.
-            $lines[] = '- Findings :';
+            $lines[] = '- Findings:';
             foreach ($sheet->findings as $finding) {
                 $lines[] = \sprintf('  - %s %s (%s) · %s', $finding->rule, $this->titles[$finding->rule] ?? '', mb_strtolower($finding->severity->label()), $finding->location);
             }
         }
-        $lines[] = \sprintf('- Fiche complète : pii://field/%s/%s', $column->reference->table, $column->reference->column);
+        $lines[] = \sprintf('- Full sheet: pii://field/%s/%s', $column->reference->table, $column->reference->column);
 
         return implode("\n", $lines);
     }
@@ -105,24 +105,24 @@ final class MarkdownFormatter
             $flow->operation->label(),
             $flow->location,
             null === $flow->target ? '' : ' → '.$flow->target,
-            [] === $flow->concatenatedFields ? '' : ' (SQL concaténé)',
+            [] === $flow->concatenatedFields ? '' : ' (concatenated SQL)',
         );
     }
 
     public function finding(Finding $finding): string
     {
-        return \sprintf('%s (%s) · %s — %s Correctif : %s', $finding->rule, mb_strtolower($finding->severity->label()), $finding->location, $finding->summary, $finding->remediation);
+        return \sprintf('%s (%s) · %s — %s Fix: %s', $finding->rule, mb_strtolower($finding->severity->label()), $finding->location, $finding->summary, $finding->remediation);
     }
 
     public function provenance(StoredReport $stored): string
     {
         return \sprintf(
-            '_Dernier scan : %s, %s._',
+            '_Last scan: %s, %s._',
             $stored->scannedAt->format('Y-m-d H:i'),
             match (true) {
-                $stored->report->replayed => 'colonnes ambiguës arbitrées par l\'agent (réponses rejouées depuis un appel enregistré)',
-                $stored->report->arbitrated => 'colonnes ambiguës arbitrées par l\'agent',
-                default => 'sans agent',
+                $stored->report->replayed => 'ambiguous columns arbitrated by the agent (answers replayed from a recorded call)',
+                $stored->report->arbitrated => 'ambiguous columns arbitrated by the agent',
+                default => 'without the agent',
             },
         );
     }

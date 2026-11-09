@@ -36,13 +36,13 @@ final class ColumnNameClassifier
                 continue;
             }
 
-            $reason = \sprintf('Le nom de colonne contient « %s ».', $signal->label());
+            $reason = \sprintf('The column name contains "%s".', $signal->label());
             $confidence = $signal->confidence;
 
             $qualifiers = array_values(array_intersect($tokens, self::QUALIFIERS));
             if ([] !== $qualifiers) {
                 $confidence = round($confidence * self::QUALIFIER_DAMPING, 2);
-                $reason .= \sprintf(' Confiance réduite : « %s » évoque un réglage ou un gabarit plutôt qu\'une donnée.', $qualifiers[0]);
+                $reason .= \sprintf(' Confidence lowered: "%s" suggests a setting or a template rather than data.', $qualifiers[0]);
             }
 
             return new PiiCandidate($column, $signal->category, $signal->sensitivity, $confidence, $reason);

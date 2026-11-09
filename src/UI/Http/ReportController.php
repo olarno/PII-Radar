@@ -76,7 +76,7 @@ final readonly class ReportController
 
         $columns = $this->queries->resolve($stored->report, $table.'.'.$column);
         if (1 !== \count($columns) || (string) $columns[0]->reference !== $table.'.'.$column) {
-            throw new NotFoundHttpException(\sprintf('La colonne %s.%s n\'existe pas dans le schéma audité.', $table, $column));
+            throw new NotFoundHttpException(\sprintf('Column %s.%s does not exist in the audited schema.', $table, $column));
         }
         $sheet = $this->queries->sheet($stored->report, $columns[0]);
 
@@ -88,7 +88,7 @@ final readonly class ReportController
         ]);
     }
 
-    #[Route('/report/registre-{format}.md', name: 'report_register', requirements: ['format' => 'loi25|rgpd'], methods: ['GET'])]
+    #[Route('/report/register-{format}.md', name: 'report_register', requirements: ['format' => 'law25|gdpr'], methods: ['GET'])]
     public function register(string $format): Response
     {
         try {
@@ -101,7 +101,7 @@ final readonly class ReportController
 
         return new Response($this->registerRenderer->render($this->registerBuilder->build($stored), $registerFormat), Response::HTTP_OK, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => \sprintf('attachment; filename="registre-%s.md"', $registerFormat->value),
+            'Content-Disposition' => \sprintf('attachment; filename="register-%s.md"', $registerFormat->value),
         ]);
     }
 

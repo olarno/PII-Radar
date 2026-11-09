@@ -36,7 +36,7 @@ final class McpServerTest extends WebTestCase
     public function testEveryCapabilityIsAdvertised(): void
     {
         self::assertSame(['pii_can_i_log', 'pii_findings', 'pii_scan', 'pii_where_is'], $this->names('tools/list', 'tools', 'name'));
-        self::assertSame(['pii://register', 'pii://register/rgpd'], $this->names('resources/list', 'resources', 'uri'));
+        self::assertSame(['pii://register', 'pii://register/gdpr'], $this->names('resources/list', 'resources', 'uri'));
         self::assertSame(['pii://field/{table}/{column}'], $this->names('resources/templates/list', 'resourceTemplates', 'uriTemplate'));
         self::assertSame(['pii-review'], $this->names('prompts/list', 'prompts', 'name'));
     }
@@ -46,27 +46,27 @@ final class McpServerTest extends WebTestCase
         $this->scanTheDemo();
         $answer = $this->tool('pii_can_i_log', ['field' => 'patients.nam']);
 
-        self::assertStringStartsWith('**Non.** patients.nam est une donnée personnelle (identifiant gouvernemental, sensibilité élevée)', $answer);
-        self::assertStringContainsString('Journalisation · public/patient.php:11 → error_log', $answer, 'The existing leak is pointed out.');
+        self::assertStringStartsWith('**No.** patients.nam is personal data (government identifier, high sensitivity)', $answer);
+        self::assertStringContainsString('Log · public/patient.php:11 → error_log', $answer, 'The existing leak is pointed out.');
     }
 
     public function testATrapRejectedByTheAgentMayBeLogged(): void
     {
         $this->scanTheDemo();
 
-        self::assertStringStartsWith('**Oui.** ville_reference.nom n\'est pas une donnée personnelle', $this->tool('pii_can_i_log', ['field' => 'ville_reference.nom']));
+        self::assertStringStartsWith('**Yes.** ville_reference.nom is not personal data', $this->tool('pii_can_i_log', ['field' => 'ville_reference.nom']));
     }
 
     public function testWhereDoesThePatientEmailLive(): void
     {
         $this->scanTheDemo();
-        $answer = $this->tool('pii_where_is', ['data' => 'où vit le courriel du patient ?']);
+        $answer = $this->tool('pii_where_is', ['data' => 'where does the patient email live?']);
 
-        self::assertStringStartsWith('2 emplacement(s)', $answer, 'patients.courriel and users.courriel, nothing else.');
+        self::assertStringStartsWith('2 place(s)', $answer, 'patients.courriel and users.courriel, nothing else.');
         self::assertStringContainsString('### patients.courriel', $answer);
-        self::assertStringContainsString('- Collecte : public/inscription.php:8', $answer);
+        self::assertStringContainsString('- Collect: public/inscription.php:8', $answer);
         self::assertStringContainsString('pii://field/patients/courriel', $answer);
-        self::assertStringContainsString('  - PII-007 Export ou dump dans le webroot (critique) · public/export_patients.csv', $answer, 'Rules are named, not just numbered.');
+        self::assertStringContainsString('  - PII-007 Export or dump in the webroot (critical) · public/export_patients.csv', $answer, 'Rules are named, not just numbered.');
         self::assertStringNotContainsString('email_template', $answer);
     }
 
@@ -82,11 +82,11 @@ final class McpServerTest extends WebTestCase
         $this->scanTheDemo();
 
         self::assertStringContainsString('# patients.nam', $this->read('pii://field/patients/nam'));
-        self::assertStringContainsString('Identifiant gouvernemental', $this->read('pii://field/patients/nam'));
-        self::assertStringContainsString('# Inventaire des renseignements personnels : legacy-app (brouillon)', $this->read('pii://register'));
-        self::assertStringContainsString('| `rendezvous.motif` | Élevée |', $this->read('pii://register'));
+        self::assertStringContainsString('Government identifier', $this->read('pii://field/patients/nam'));
+        self::assertStringContainsString('# Personal information inventory: legacy-app (draft)', $this->read('pii://register'));
+        self::assertStringContainsString('| `rendezvous.motif` | High |', $this->read('pii://register'));
         self::assertStringNotContainsString('ville_reference', $this->read('pii://register'));
-        self::assertStringContainsString('Catégories particulières (art. 9)', $this->read('pii://register/rgpd'));
+        self::assertStringContainsString('Special categories (art. 9)', $this->read('pii://register/gdpr'));
     }
 
     public function testTheReviewPromptCarriesTheInventoryAndTheDiff(): void
@@ -95,8 +95,8 @@ final class McpServerTest extends WebTestCase
         $result = $this->call('prompts/get', ['name' => 'pii-review', 'arguments' => ['diff' => "+ error_log(\$patient['nam']);"]]);
 
         $text = (string) json_encode($result, \JSON_UNESCAPED_UNICODE);
-        self::assertStringContainsString('patients.nam : identifiant gouvernemental, sensibilité élevée', $text);
-        self::assertStringContainsString('PII-002 : Donnée personnelle écrite dans un journal', $text);
+        self::assertStringContainsString('- patients.nam: government identifier, high sensitivity', $text);
+        self::assertStringContainsString('- PII-002: Personal data written to a log', $text);
         self::assertStringContainsString("error_log(\$patient['nam'])", $text);
     }
 
@@ -106,7 +106,7 @@ final class McpServerTest extends WebTestCase
         $result = $this->call('tools/call', ['name' => 'pii_where_is', 'arguments' => ['data' => 'courriel']]);
 
         self::assertTrue($result['isError'] ?? false);
-        self::assertStringContainsString('Aucun scan', (string) json_encode($result, \JSON_UNESCAPED_UNICODE));
+        self::assertStringContainsString('No scan', (string) json_encode($result, \JSON_UNESCAPED_UNICODE));
     }
 
     private function scanTheDemo(): void

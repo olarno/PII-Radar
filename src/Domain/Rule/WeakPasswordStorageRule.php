@@ -26,7 +26,7 @@ final class WeakPasswordStorageRule implements Rule
 
     public function title(): string
     {
-        return 'Mot de passe haché faiblement ou stocké en clair';
+        return 'Password weakly hashed or stored in clear';
     }
 
     public function evaluate(AuditContext $context): array
@@ -48,8 +48,8 @@ final class WeakPasswordStorageRule implements Rule
                 Severity::Critical,
                 $flow->location,
                 $credentials,
-                \sprintf('%s haché avec %s, un algorithme rapide et cassé.', implode(', ', array_map('strval', $credentials)), $flow->target),
-                'Hacher les mots de passe avec password_hash() ou le PasswordHasher de Symfony (bcrypt, argon2id), puis migrer les anciens hash à la connexion.',
+                \sprintf('%s hashed with %s, a fast and broken algorithm.', implode(', ', array_map('strval', $credentials)), $flow->target),
+                'Hash passwords with password_hash() or the Symfony PasswordHasher (bcrypt, argon2id), then migrate the old hashes at login.',
             );
         }
 
@@ -64,8 +64,8 @@ final class WeakPasswordStorageRule implements Rule
                 Severity::Critical,
                 $flow->location,
                 $credentials,
-                \sprintf('%s enregistré sans aucun hachage.', implode(', ', array_map('strval', $credentials))),
-                'Hacher les mots de passe avec password_hash() ou le PasswordHasher de Symfony avant de les enregistrer.',
+                \sprintf('%s stored without any hashing.', implode(', ', array_map('strval', $credentials))),
+                'Hash passwords with password_hash() or the Symfony PasswordHasher before storing them.',
             );
         }
 

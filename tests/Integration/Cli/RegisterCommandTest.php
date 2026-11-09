@@ -15,23 +15,23 @@ final class RegisterCommandTest extends KernelTestCase
 {
     private const string DEMO = __DIR__.'/../../../demo/legacy-app';
 
-    public function testPrintsTheLoi25DraftOfTheLastScan(): void
+    public function testPrintsTheLaw25DraftOfTheLastScan(): void
     {
         $tester = $this->scannedTester();
         $tester->execute([]);
 
         $tester->assertCommandIsSuccessful();
-        self::assertStringStartsWith('# Inventaire des renseignements personnels : legacy-app (brouillon)', $tester->getDisplay());
+        self::assertStringStartsWith('# Personal information inventory: legacy-app (draft)', $tester->getDisplay());
     }
 
     public function testWritesTheGdprDraftToAFileUnderAChosenName(): void
     {
         $file = sys_get_temp_dir().'/pii-radar-register-'.bin2hex(random_bytes(4)).'.md';
         $tester = $this->scannedTester();
-        $tester->execute(['path' => self::DEMO, '--format' => 'rgpd', '--output' => $file, '--name' => 'Clinique Bonsoir']);
+        $tester->execute(['path' => self::DEMO, '--format' => 'gdpr', '--output' => $file, '--name' => 'Clinique Bonsoir']);
 
         $tester->assertCommandIsSuccessful();
-        self::assertStringStartsWith('# Registre des activités de traitement : Clinique Bonsoir', (string) file_get_contents($file));
+        self::assertStringStartsWith('# Record of processing activities: Clinique Bonsoir', (string) file_get_contents($file));
         new Filesystem()->remove($file);
     }
 
@@ -42,7 +42,7 @@ final class RegisterCommandTest extends KernelTestCase
 
         self::assertSame(Command::FAILURE, $tester->execute([]));
         // The console wraps long messages: a long project path must not split the words checked here.
-        self::assertStringContainsString('lancez d\'abord', (string) preg_replace('/\s+/', ' ', $tester->getDisplay()));
+        self::assertStringContainsString('first', (string) preg_replace('/\s+/', ' ', $tester->getDisplay()));
     }
 
     public function testRejectsAnUnknownFramework(): void

@@ -83,7 +83,7 @@ final class AuditQueries
     }
 
     /**
-     * Personal data matching a question such as "où vit le courriel du client ?", best matches first.
+     * Personal data matching a question such as "where does the customer email live?" (French works too), best matches first.
      *
      * @return list<FieldSheet>
      */
@@ -100,7 +100,7 @@ final class AuditQueries
         }
 
         // Words about the data itself qualify a field; the table name only breaks ties ("du patient"),
-        // unless the question names nothing but the table ("les données des patients").
+        // unless the question names nothing but the table ("the patients' data").
         $scored = [];
         foreach ($report->classifiedFields as $field) {
             if (!$field->personal) {
@@ -128,18 +128,18 @@ final class AuditQueries
                 $sheet,
                 LogVerdict::Allowed,
                 null === $classification
-                    ? \sprintf('%s ne ressemble pas à une donnée personnelle.', $column->reference)
-                    : \sprintf('%s n\'est pas une donnée personnelle : %s', $column->reference, $classification->justification),
-                'Rien à masquer.',
+                    ? \sprintf('%s does not look like personal data.', $column->reference)
+                    : \sprintf('%s is not personal data: %s', $column->reference, $classification->justification),
+                'Nothing to mask.',
                 $logs,
             );
         }
 
-        $kind = \sprintf('%s est une donnée personnelle (%s, sensibilité %s)', $column->reference, mb_strtolower($classification->category->label()), mb_strtolower($classification->sensitivity->label()));
+        $kind = \sprintf('%s is personal data (%s, %s sensitivity)', $column->reference, mb_strtolower($classification->category->label()), mb_strtolower($classification->sensitivity->label()));
 
         return Sensitivity::Low === $classification->sensitivity
-            ? new LogAdvice($sheet, LogVerdict::Avoid, $kind.' : à éviter dans les journaux (règle PII-002).', 'Si le journal en a vraiment besoin, le masquer ou le pseudonymiser (par exemple une IP tronquée), et le purger avec le journal.', $logs)
-            : new LogAdvice($sheet, LogVerdict::Forbidden, $kind.' : ne pas la journaliser (règle PII-002).', 'Journaliser un identifiant technique (par exemple l\'id de la ligne) à la place, ou masquer la valeur avec un processor Monolog.', $logs);
+            ? new LogAdvice($sheet, LogVerdict::Avoid, $kind.': avoid it in logs (rule PII-002).', 'If the log really needs it, mask or pseudonymize it (for example a truncated IP), and purge it with the log.', $logs)
+            : new LogAdvice($sheet, LogVerdict::Forbidden, $kind.': do not log it (rule PII-002).', 'Log a technical identifier instead (for example the row id), or mask the value with a Monolog processor.', $logs);
     }
 
     /**

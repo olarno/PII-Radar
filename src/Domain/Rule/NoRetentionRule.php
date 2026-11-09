@@ -22,7 +22,7 @@ final class NoRetentionRule implements Rule
 
     public function title(): string
     {
-        return 'Aucune trace de rétention ou de suppression';
+        return 'No sign of retention or deletion';
     }
 
     public function evaluate(AuditContext $context): array
@@ -46,8 +46,8 @@ final class NoRetentionRule implements Rule
                 Severity::Medium,
                 $table->location,
                 $fields,
-                \sprintf('Aucune suppression ni purge de la table %s dans le code, qui contient %d champ(s) personnel(s).', $table->name, \count($fields)),
-                'Fixer une durée de conservation avec le responsable, puis ajouter une commande de purge planifiée (DELETE ou anonymisation).',
+                \sprintf('No deletion or purge of the %s table in the code, which holds %d personal field(s).', $table->name, \count($fields)),
+                'Set a retention period with the person in charge, then add a scheduled purge command (DELETE or anonymization).',
             );
         }
 

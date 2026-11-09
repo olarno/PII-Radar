@@ -116,19 +116,19 @@ final readonly class RegisterBuilder
         $writes = array_values(array_filter($parameterized, static fn (FlowPoint $flow): bool => FlowOperation::Store === $flow->operation));
         if ([] !== $writes) {
             $measures[] = new SecurityMeasure(
-                'Écritures de renseignements personnels sans concaténation SQL (requêtes préparées)',
+                'Personal information written without SQL concatenation (prepared statements)',
                 array_map(static fn (FlowPoint $flow): SourceLocation => $flow->location, $writes),
             );
         }
 
         foreach ($flows as $flow) {
             if (FlowOperation::Hash === $flow->operation && \in_array(strtolower((string) $flow->target), self::STRONG_HASHES, true)) {
-                $measures[] = new SecurityMeasure(\sprintf('Mots de passe hachés avec %s', $flow->target), [$flow->location]);
+                $measures[] = new SecurityMeasure(\sprintf('Passwords hashed with %s', $flow->target), [$flow->location]);
             }
         }
 
         foreach ($deletions as $table => $locations) {
-            $measures[] = new SecurityMeasure(\sprintf('Suppression des données de la table %s', $table), $locations);
+            $measures[] = new SecurityMeasure(\sprintf('Deletion of the data of the %s table', $table), $locations);
         }
 
         return $measures;
@@ -151,7 +151,7 @@ final readonly class RegisterBuilder
     {
         $target = (string) $flow->target;
 
-        return str_starts_with($target, 'mail:') ? 'Courriel ('.substr($target, 5).')' : $target;
+        return str_starts_with($target, 'mail:') ? 'E-mail ('.substr($target, 5).')' : $target;
     }
 
     /**

@@ -101,7 +101,7 @@ final class RecordingArbiter implements CandidateArbiter
             $candidate->category,
             $candidate->sensitivity,
             0.9,
-            'Décision de test.',
+            'Test decision.',
             DecisionSource::Agent,
         ), $candidates), new AgentUsage(3, 9000, 400));
     }

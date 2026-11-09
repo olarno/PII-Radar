@@ -2,159 +2,159 @@
 
 [![CI](https://github.com/olarno/PII-Radar/actions/workflows/ci.yml/badge.svg)](https://github.com/olarno/PII-Radar/actions/workflows/ci.yml)
 
-**PII Radar trouve où une application PHP legacy stocke, journalise et fait fuiter des données personnelles, puis produit un brouillon de registre Loi 25 / RGPD.** La carte des données est exposée en serveur MCP : votre assistant de code peut demander « où vit le courriel du patient ? » ou « ai-je le droit de logger ce champ ? » avant d'écrire une ligne.
+**PII Radar finds where a legacy PHP application stores, logs and leaks personal data, then drafts a Quebec Law 25 / GDPR register.** The data map is exposed as an MCP server: your coding assistant can ask "where does the patient email live?" or "may I log this field?" before writing a single line.
 
-100 % PHP, construit avec [Symfony AI](https://symfony.com/doc/current/ai/index.html) et le [SDK MCP PHP](https://github.com/modelcontextprotocol/php-sdk) pour le Symfony AI & MCP Hackathon.
+100% PHP, built with [Symfony AI](https://symfony.com/doc/current/ai/index.html) and the [MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk) for the Symfony AI & MCP Hackathon.
 
-> **Avertissement :** PII Radar produit un *brouillon* d'inventaire pour aider la démarche de conformité. Ce n'est pas un avis juridique.
+> **Disclaimer:** PII Radar produces a *draft* inventory to support compliance work. It is not legal advice.
 
-![Rapport web de PII Radar sur l'appli de démo : findings par sévérité et carte des flux de données personnelles](docs/images/rapport.png)
+![PII Radar web report on the demo app: findings by severity and map of personal data flows](docs/images/report.png)
 
-## Essayer en 5 minutes
+## Try it in 5 minutes
 
-Il faut **Docker avec Compose v2** et **git**. Aucune clé, aucun compte : l'appli de démo et un vrai appel de l'agent enregistré sont fournis.
+You need **Docker with Compose v2** and **git**. No key, no account: the demo app and a real recorded agent call are included.
 
-### 1. Démarrer (2 à 4 minutes au premier lancement)
+### 1. Start (2 to 4 minutes the first time)
 
 ```bash
 git clone https://github.com/olarno/PII-Radar.git && cd PII-Radar
 docker compose up -d --wait
 ```
 
-`--wait` rend la main quand tout répond. Les ports 8080 ou 8081 sont déjà pris ? `APP_PORT=8090 LEGACY_APP_PORT=8091 docker compose up -d --wait`, puis remplacez les ports dans les adresses ci-dessous.
+`--wait` returns once everything answers. Ports 8080 or 8081 already taken? `APP_PORT=8090 LEGACY_APP_PORT=8091 docker compose up -d --wait`, then change the ports in the addresses below.
 
-L'application auditée est **Clinique Bonsoir**, un faux back-office de clinique écrit « comme en 2014 » : http://localhost:8081 (compte `reception@clinique-bonsoir.test` / `bonsoir`). Toutes les personnes y sont fictives.
+The audited application is **Clinique Bonsoir**, a fake clinic back office written "like in 2014", in French as a Quebec clinic's would be: http://localhost:8081 (account `reception@clinique-bonsoir.test` / `bonsoir`). Every person in it is fictitious.
 
-### 2. Scanner l'appli de démo
+### 2. Scan the demo app
 
 ```bash
 docker compose exec app bin/console pii:scan demo/legacy-app --replay
 ```
 
-Le scan lit le schéma SQL et le code PHP, suit les données personnelles, puis applique les règles PII-001 à PII-008 : **14 findings**, dont un NAM écrit dans `error_log`, des mots de passe en MD5, un export CSV public et des téléphones envoyés à Twilio, hors Québec.
+The scan reads the SQL schema and the PHP code, tracks personal data, then applies rules PII-001 to PII-008: **14 findings**, including a health insurance number (NAM) written to `error_log`, MD5 passwords, a public CSV export and phone numbers sent to Twilio, outside Quebec.
 
-Les colonnes ambiguës (`patients.nom`, `rendezvous.motif` et deux pièges, `email_template` et `ville_reference.nom`) sont arbitrées par l'agent Symfony AI. `--replay` rejoue un **vrai appel Hugging Face enregistré** : aucune clé, aucun appel réseau, et la sortie le signale. Pour un appel réel, voir [Avec votre token Hugging Face](#avec-votre-token-hugging-face).
+Ambiguous columns (`patients.nom`, `rendezvous.motif` and two traps, `email_template` and `ville_reference.nom`) are arbitrated by the Symfony AI agent. `--replay` replays a **real recorded Hugging Face call**: no key, no network call, and the output says so. For a live call, see [With your Hugging Face token](#with-your-hugging-face-token).
 
-### 3. Ouvrir le rapport
+### 3. Open the report
 
-**http://localhost:8080/report** : findings avec preuve et correctif, données personnelles avec qui a décidé et pourquoi, carte des flux. Cliquez sur `patients.telephone` pour voir son parcours : collecté à l'inscription, journalisé, envoyé à Twilio, présent dans l'export public.
+**http://localhost:8080/report**: findings with evidence and fix, personal data with who decided and why, flow map. Click `patients.telephone` to see its journey: collected at signup, logged, sent to Twilio, present in the public export.
 
-### 4. Générer le brouillon de registre
+### 4. Generate the draft register
 
 ```bash
-docker compose exec app bin/console pii:register                  # Loi 25
-docker compose exec app bin/console pii:register --format=rgpd    # RGPD, article 30
+docker compose exec app bin/console pii:register                  # Quebec Law 25
+docker compose exec app bin/console pii:register --format=gdpr    # GDPR, article 30
 ```
 
-Tout ce qui ne se déduit pas du code (finalités, durées de conservation, responsable, ententes avec les tiers) est marqué « à confirmer par le responsable ».
+Everything that cannot be inferred from code (purposes, retention periods, person in charge, agreements with third parties) is marked "to be confirmed".
 
-### 5. Demander à votre assistant de code
+### 5. Ask your coding assistant
 
-Avec [Claude Code](https://docs.claude.com/en/docs/claude-code), lancez `claude` dans le dossier du projet et acceptez le serveur `pii-radar` : le fichier [`.mcp.json`](.mcp.json) le branche via `docker compose`. Claude Code demande ensuite l'autorisation la première fois qu'il utilise chaque outil : acceptez (« Yes, and don't ask again » pour ne plus être interrompu). Refuser affiche « Interrupted · What should Claude do instead? ». Puis demandez :
+With [Claude Code](https://docs.claude.com/en/docs/claude-code), run `claude` in the project folder and accept the `pii-radar` server: the [`.mcp.json`](.mcp.json) file connects it through `docker compose`. Claude Code then asks for permission the first time it uses each tool: accept ("Yes, and don't ask again" to stop being asked). Declining shows "Interrupted · What should Claude do instead?". Then ask:
 
-- « Ai-je le droit de logger `patients.nam` ? »
-- « Où vit le courriel du patient ? »
-- « Ajoute un log de debug du dossier patient dans `rappel.php` » : l'assistant consulte PII Radar et propose de ne journaliser que l'identifiant technique.
+- "May I log `patients.nam`?"
+- "Where does the patient email live?"
+- "Add a debug log of the patient record in `rappel.php`": the assistant checks PII Radar and suggests logging only the technical identifier.
 
-Pour un autre client MCP, le serveur répond en STDIO (`docker compose exec -T app bin/console mcp:server`) et en HTTP (`http://localhost:8080/mcp/pii_radar`).
+For another MCP client, the server answers over STDIO (`docker compose exec -T app bin/console mcp:server`) and HTTP (`http://localhost:8080/mcp/pii_radar`).
 
-## Avec votre token Hugging Face
+## With your Hugging Face token
 
-Pour que l'agent appelle réellement le modèle :
+To have the agent really call the model:
 
-1. Créez un token sur https://huggingface.co/settings/tokens : type **Fine-grained**, permission **« Make calls to Inference Providers »**.
-2. Mettez-le dans `.env.local`, qui n'est jamais versionné : `echo "HUGGINGFACE_API_KEY=hf_..." > .env.local`
+1. Create a token at https://huggingface.co/settings/tokens: type **Fine-grained**, permission **"Make calls to Inference Providers"**.
+2. Put it in `.env.local`, which is never versioned: `echo "HUGGINGFACE_API_KEY=hf_..." > .env.local`
 3. `docker compose exec app bin/console pii:scan demo/legacy-app`
 
-Un scan de la démo fait une dizaine d'appels au modèle pour environ 13 000 tokens en entrée (affichés à la fin du scan) : de l'ordre d'un cent. Le modèle par défaut est `openai/gpt-oss-120b`, modifiable avec `PII_RADAR_MODEL`. Sans token, `--no-ai` lance un scan déterministe où l'heuristique décide seule.
+A scan of the demo makes about ten model calls for about 13,000 input tokens (shown at the end of the scan): around one cent. The default model is `openai/gpt-oss-120b`, configurable with `PII_RADAR_MODEL`. Without a token, `--no-ai` runs a deterministic scan where the heuristic decides alone.
 
-## Auditer votre application
+## Audit your own application
 
 ```bash
-git clone <votre-appli> audited/mon-appli           # le dossier audited/ est ignoré par git
-docker compose exec app bin/console pii:scan audited/mon-appli
-echo "PII_RADAR_PROJECT=audited/mon-appli" >> .env.local   # le rapport web et le serveur MCP la suivent
+git clone <your-app> audited/my-app                  # the audited/ folder is ignored by git
+docker compose exec app bin/console pii:scan audited/my-app
+echo "PII_RADAR_PROJECT=audited/my-app" >> .env.local   # the web report and the MCP server follow it
 ```
 
-PII Radar lit les fichiers `.sql` (schéma écrit à la main ou `mysqldump`) et le code PHP. Il n'écrit jamais dans l'application auditée et ne se connecte pas à sa base.
+PII Radar reads `.sql` files (hand-written schema or `mysqldump`) and the PHP code. It never writes to the audited application and never connects to its database.
 
-## Ce que fait PII Radar
+## What PII Radar does
 
-Le déterministe d'abord, le LLM pour arbitrer et expliquer :
+Deterministic first, the LLM to arbitrate and explain:
 
-1. **Schéma :** chaque colonne des `CREATE TABLE` est classée par son nom, en français et en anglais (`date_naissance`, `dateOfBirth`, `nam`, `courriel`…).
-2. **Code :** `nikic/php-parser` suit les données dans les formulaires, les requêtes SQL, les journaux, les appels HTTP, les courriels et les hachages, avec fichier et ligne.
-3. **Agent :** les seules colonnes ambiguës (confiance < 0,8) sont arbitrées par un agent Symfony AI qui enquête avec ses outils (`describe_table`, `find_column_usages`, `read_code_snippet`). **Il ne voit jamais une valeur** : seulement des métadonnées et du code masqué (`[COURRIEL]`, `[NAM]`, `[TELEPHONE]`…).
-4. **Règles :**
+1. **Schema:** each column of the `CREATE TABLE` statements is classified by its name, in French and English (`date_naissance`, `dateOfBirth`, `nam`, `courriel`…).
+2. **Code:** `nikic/php-parser` tracks data through forms, SQL queries, logs, HTTP calls, e-mails and hashes, with file and line.
+3. **Agent:** only the ambiguous columns (confidence < 0.8) are arbitrated by a Symfony AI agent that investigates with its tools (`describe_table`, `find_column_usages`, `read_code_snippet`). **It never sees a value**: only metadata and masked code (`[EMAIL]`, `[NAM]`, `[PHONE]`…).
+4. **Rules:**
 
-   | Règle | Détecte |
+   | Rule | Detects |
    |---|---|
-   | PII-001 | Donnée sensible stockée en clair |
-   | PII-002 | Donnée personnelle écrite dans un journal |
-   | PII-003 | Donnée personnelle envoyée à un tiers non déclaré |
-   | PII-004 | Requête SQL concaténée avec une donnée personnelle |
-   | PII-005 | Mot de passe haché faiblement ou stocké en clair |
-   | PII-006 | Aucune trace de suppression des données |
-   | PII-007 | Export ou dump dans le webroot |
-   | PII-008 | Communication hors Québec (EFVP à réaliser) |
+   | PII-001 | Sensitive data stored in clear |
+   | PII-002 | Personal data written to a log |
+   | PII-003 | Personal data sent to an undeclared third party |
+   | PII-004 | SQL query concatenated with personal data |
+   | PII-005 | Password weakly hashed or stored in clear |
+   | PII-006 | No sign of retention or deletion |
+   | PII-007 | Export or dump in the webroot |
+   | PII-008 | Personal information communicated outside Quebec (PIA required) |
 
-5. **Sorties :** commande `pii:scan` (tableau ou `--format=json`), rapport web, registre Loi 25 / RGPD, serveur MCP. Chaque scan est enregistré dans `var/pii-radar/` : les questions au serveur MCP et le rapport ne relancent pas le LLM.
+5. **Outputs:** `pii:scan` command (table or `--format=json`), web report, Law 25 / GDPR register, MCP server. Each scan is stored in `var/pii-radar/`: questions to the MCP server and the report never run the LLM again.
 
-![Parcours de patients.telephone : formulaire d'inscription, journal d'erreurs, Twilio hors Québec, export public](docs/images/parcours-champ.png)
+![Journey of patients.telephone: signup form, error log, Twilio outside Quebec, public export](docs/images/field-journey.png)
 
-### Serveur MCP
+### MCP server
 
-| Capacité | Nom | Rôle |
+| Capability | Name | Role |
 |---|---|---|
-| Outil | `pii_where_is` | Où vit une donnée (« courriel du patient », `patients.nam`) |
-| Outil | `pii_can_i_log` | Un champ peut-il être journalisé ? Réponse, règle, alternative, fuites existantes |
-| Outil | `pii_findings` | Findings filtrés par sévérité, fichier ou règle |
-| Outil | `pii_scan` | Relance un scan (appelle le LLM, sauf `withAgent: false`) |
-| Ressource | `pii://register` | Brouillon de registre Loi 25 |
-| Ressource | `pii://register/rgpd` | Brouillon de registre RGPD (art. 30) |
-| Modèle de ressource | `pii://field/{table}/{column}` | Fiche complète d'un champ |
-| Prompt | `pii-review` | Revue d'un diff sous l'angle des données personnelles |
+| Tool | `pii_where_is` | Where a piece of data lives ("patient email", `patients.nam`) |
+| Tool | `pii_can_i_log` | May a field be logged? Answer, rule, alternative, existing leaks |
+| Tool | `pii_findings` | Findings filtered by severity, file or rule |
+| Tool | `pii_scan` | Runs a new scan (calls the LLM, unless `withAgent: false`) |
+| Resource | `pii://register` | Draft Law 25 register |
+| Resource | `pii://register/gdpr` | Draft GDPR register (art. 30) |
+| Resource template | `pii://field/{table}/{column}` | Full sheet of a field |
+| Prompt | `pii-review` | Review of a diff from the personal data angle |
 
-## Ce que Symfony AI et MCP ont débloqué
+## What Symfony AI and MCP unlocked
 
-- **Un agent qui enquête au lieu de deviner.** `symfony/ai-agent` et des outils `#[AsTool]` laissent le modèle lire la table, les usages d'une colonne et le code avant de trancher. Les deux pièges de la démo sont rejetés avec une justification qui cite la preuve.
-- **Enquête, puis verdict structuré.** Les fournisseurs Hugging Face refusent les outils et la sortie structurée dans la même requête. Deux agents déclarés dans `config/packages/ai.yaml` : `arbiter` enquête avec ses outils, `verdicts` rend une sortie structurée (`response_format`) sans outils ([décision 16](docs/decisions.md)).
-- **Le LLM ne voit jamais une donnée personnelle.** L'outil de lecture de code passe chaque extrait dans un masqueur, et un test vérifie ce qui atteint réellement le modèle.
-- **Des tests qui rejouent le vrai modèle.** Le `CassetteHttpClient` de `symfony/ai-platform` enregistre un vrai appel Hugging Face (identifiants retirés) ; la CI le rejoue à chaque push, sans clé, et c'est le même enregistrement que `pii:scan --replay`.
-- **Un modèle indépendant du fournisseur.** Le bridge Hugging Face d'Inference Providers donne accès à des dizaines de modèles avec appel d'outils ; le modèle est une variable d'environnement.
-- **Le serveur MCP dans l'appli Symfony.** `symfony/mcp-bundle` découvre les `#[McpTool]`, `#[McpResource]`, `#[McpResourceTemplate]` et `#[McpPrompt]` de `src/Infrastructure/Mcp`, servis en STDIO et en HTTP avec un seul code.
+- **An agent that investigates instead of guessing.** `symfony/ai-agent` and `#[AsTool]` tools let the model read the table, the usages of a column and the code before deciding. Both demo traps are rejected with a justification that cites the evidence.
+- **Investigation, then structured verdict.** Hugging Face providers reject tools and structured output in the same request. Two agents are declared in `config/packages/ai.yaml`: `arbiter` investigates with its tools, `verdicts` returns structured output (`response_format`) without tools ([decision 16](docs/decisions.md)).
+- **The LLM never sees personal data.** The code-reading tool passes every excerpt through a masker, and a test checks what actually reaches the model.
+- **Tests that replay the real model.** The `CassetteHttpClient` of `symfony/ai-platform` records a real Hugging Face call (credentials removed); CI replays it on every push, without a key, and it is the same recording as `pii:scan --replay`.
+- **A provider-independent model.** The Hugging Face Inference Providers bridge gives access to dozens of models with tool calling; the model is an environment variable.
+- **The MCP server inside the Symfony app.** `symfony/mcp-bundle` discovers the `#[McpTool]`, `#[McpResource]`, `#[McpResourceTemplate]` and `#[McpPrompt]` of `src/Infrastructure/Mcp`, served over STDIO and HTTP with a single codebase.
 
-## Développement
+## Development
 
 ```bash
-docker compose exec app composer qa   # CS-Fixer, PHPStan niveau max, Deptrac, PHPUnit
+docker compose exec app composer qa   # CS-Fixer, PHPStan max level, Deptrac, PHPUnit
 ```
 
-- **Architecture en couches**, vérifiée par Deptrac : `Domain` (PHP pur, aucune dépendance) ← `Application` ← `Infrastructure` ← `UI`. Les règles PII-001 à PII-008 sont des fonctions pures du domaine.
-- **Contrat de bout en bout :** [`demo/legacy-app/expected-findings.json`](demo/legacy-app/expected-findings.json) décrit les 14 findings plantés, les 16 données personnelles et les pièges. Les tests exigent tout le contrat et rien de plus.
-- **Aucune clé pour les tests.** Pour réenregistrer l'appel de l'agent après une modification du prompt, des outils ou de la démo :
+- **Layered architecture**, checked by Deptrac: `Domain` (pure PHP, no dependency) ← `Application` ← `Infrastructure` ← `UI`. Rules PII-001 to PII-008 are pure domain functions.
+- **End-to-end contract:** [`demo/legacy-app/expected-findings.json`](demo/legacy-app/expected-findings.json) describes the 14 planted findings, the 16 pieces of personal data and the traps. Tests require the whole contract and nothing more.
+- **No key for tests.** To record the agent call again after changing the prompt, the tools or the demo:
 
   ```bash
   rm demo/replay/agent-arbitration.json
   docker compose exec -e HUGGINGFACE_API_KEY=hf_... app vendor/bin/phpunit tests/E2E/DemoArbitrationTest.php
   ```
 
-- **Décisions de conception :** [`docs/decisions.md`](docs/decisions.md).
+- **Design decisions:** [`docs/decisions.md`](docs/decisions.md).
 
-| Variable | Rôle | Défaut |
+| Variable | Role | Default |
 |---|---|---|
-| `HUGGINGFACE_API_KEY` | Token Hugging Face de l'agent (dans `.env.local`) | vide |
-| `PII_RADAR_MODEL` | Modèle de l'agent (appel d'outils et sortie structurée requis) | `openai/gpt-oss-120b` |
-| `PII_RADAR_PROJECT` | Application suivie par le rapport web et le serveur MCP | `demo/legacy-app` |
-| `APP_PORT`, `LEGACY_APP_PORT` | Ports publiés par Docker Compose | `8080`, `8081` |
+| `HUGGINGFACE_API_KEY` | Hugging Face token of the agent (in `.env.local`) | empty |
+| `PII_RADAR_MODEL` | Agent model (tool calling and structured output required) | `openai/gpt-oss-120b` |
+| `PII_RADAR_PROJECT` | Application followed by the web report and the MCP server | `demo/legacy-app` |
+| `APP_PORT`, `LEGACY_APP_PORT` | Ports published by Docker Compose | `8080`, `8081` |
 
-## Limites
+## Limitations
 
-- PHP seulement, schéma lu depuis des fichiers `.sql`.
-- Le suivi des données reste dans un fichier : il ne suit ni les inclusions ni les appels de fonctions.
-- Le nom d'une colonne et l'examen de son code ne disent rien de sa finalité ni de sa durée de conservation : le registre les laisse à confirmer.
-- Le rejeu `--replay` ne fonctionne que sur l'appli de démo.
+- PHP only, schema read from `.sql` files.
+- Data tracking stays within one file: it follows neither includes nor function calls.
+- A column's name and its code say nothing about its purpose or retention period: the register leaves them to be confirmed.
+- `--replay` only works on the demo app.
 
-## Licence
+## License
 
 MIT

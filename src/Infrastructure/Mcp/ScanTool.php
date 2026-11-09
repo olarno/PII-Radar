@@ -22,11 +22,11 @@ final readonly class ScanTool
 
     #[McpTool(
         name: 'pii_scan',
-        description: 'Relance un scan complet de l\'application auditée après une modification du code. Avec l\'agent, appelle le LLM (coût) : les autres outils lisent le dernier scan sans coût.',
+        description: 'Runs a full scan of the audited application again after a code change. With the agent it calls the LLM (cost): the other tools read the last scan at no cost.',
         annotations: new ToolAnnotations(readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true),
     )]
     public function __invoke(
-        #[Schema(description: 'Faire arbitrer les colonnes ambiguës par l\'agent (appel au LLM). false pour un scan déterministe, sans coût.')]
+        #[Schema(description: 'Have the agent arbitrate ambiguous columns (LLM call). false for a deterministic scan at no cost.')]
         bool $withAgent = true,
     ): string {
         try {
@@ -42,12 +42,12 @@ final readonly class ScanTool
         $personal = array_filter($report->classifiedFields, static fn ($field): bool => $field->personal);
 
         return \sprintf(
-            "Scan terminé : %d finding(s) (%s), %d champ(s) personnel(s) sur %d colonnes.%s\n\nPlus graves :\n%s",
+            "Scan done: %d finding(s) (%s), %d personal field(s) out of %d columns.%s\n\nMost severe:\n%s",
             \count($report->findings),
             implode(', ', array_map(static fn (string $severity, int $count): string => \sprintf('%d %s', $count, mb_strtolower($severity)), array_keys($bySeverity), $bySeverity)),
             \count($personal),
             \count($report->schema->columns()),
-            null === $report->agentUsage ? '' : \sprintf(' Agent : %d appel(s), %s tokens en entrée.', $report->agentUsage->calls, $report->agentUsage->inputTokens ?? '?'),
+            null === $report->agentUsage ? '' : \sprintf(' Agent: %d call(s), %s input tokens.', $report->agentUsage->calls, $report->agentUsage->inputTokens ?? '?'),
             implode("\n", array_map(static fn (Finding $finding): string => \sprintf('- %s · %s — %s', $finding->rule, $finding->location, $finding->summary), \array_slice($report->findings, 0, 5))),
         );
     }

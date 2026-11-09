@@ -62,7 +62,7 @@ final class AuditQueriesTest extends KernelTestCase
         self::assertSame(['public/patient.php:11'], array_map(static fn ($flow): string => (string) $flow->location, $advice('patients.nam')->existingLogs));
         self::assertSame(LogVerdict::Avoid, $advice('users.derniere_ip')->verdict);
         self::assertSame(LogVerdict::Allowed, $advice('ville_reference.nom')->verdict, 'The agent rejected this trap.');
-        self::assertStringContainsString('référence', $advice('ville_reference.nom')->reason);
+        self::assertStringStartsWith('ville_reference.nom is not personal data: ', $advice('ville_reference.nom')->reason);
         self::assertSame(LogVerdict::Allowed, $advice('patients.id')->verdict);
     }
 

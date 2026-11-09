@@ -19,13 +19,13 @@ enum FlowOperation: string
     public function label(): string
     {
         return match ($this) {
-            self::Collect => 'Collecte',
-            self::Read => 'Lecture',
-            self::Store => 'Stockage',
-            self::Delete => 'Suppression',
-            self::Log => 'Journalisation',
-            self::Send => 'Envoi',
-            self::Hash => 'Hachage',
+            self::Collect => 'Collect',
+            self::Read => 'Read',
+            self::Store => 'Store',
+            self::Delete => 'Delete',
+            self::Log => 'Log',
+            self::Send => 'Send',
+            self::Hash => 'Hash',
         };
     }
 }

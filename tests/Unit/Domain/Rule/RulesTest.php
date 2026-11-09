@@ -130,6 +130,6 @@ final class RulesTest extends RuleTestCase
         self::assertCount(2, $findings);
         self::assertSame(['US', Severity::Medium], [$findings[0]->jurisdiction, $findings[0]->severity]);
         self::assertSame([null, Severity::Low], [$findings[1]->jurisdiction, $findings[1]->severity]);
-        self::assertStringContainsString('à confirmer', $findings[1]->summary);
+        self::assertStringContainsString('to be confirmed', $findings[1]->summary);
     }
 }

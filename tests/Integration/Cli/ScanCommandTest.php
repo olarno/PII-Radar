@@ -24,12 +24,12 @@ final class ScanCommandTest extends KernelTestCase
         self::assertCount(6, $output['schema']);
         self::assertIsArray($output['candidates']);
         self::assertContains(
-            ['field' => 'patients.nam', 'category' => 'government_id', 'sensitivity' => 'high', 'confidence' => 0.9, 'reason' => 'Le nom de colonne contient « nam ».'],
+            ['field' => 'patients.nam', 'category' => 'government_id', 'sensitivity' => 'high', 'confidence' => 0.9, 'reason' => 'The column name contains "nam".'],
             $output['candidates'],
         );
         self::assertIsArray($output['findings']);
         self::assertContains(
-            ['rule' => 'PII-008', 'severity' => 'medium', 'location' => ['file' => 'public/rappel.php', 'line' => 14], 'fields' => ['patients.telephone', 'patients.prenom', 'patients.nom'], 'summary' => 'patients.telephone, patients.prenom, patients.nom envoyé à api.twilio.com (États-Unis) : communication hors Québec.', 'remediation' => 'Réaliser une évaluation des facteurs relatifs à la vie privée (EFVP) avant la communication, et l\'encadrer par une entente écrite.', 'recipient' => 'api.twilio.com', 'jurisdiction' => 'US'],
+            ['rule' => 'PII-008', 'severity' => 'medium', 'location' => ['file' => 'public/rappel.php', 'line' => 14], 'fields' => ['patients.telephone', 'patients.prenom', 'patients.nom'], 'summary' => 'patients.telephone, patients.prenom, patients.nom sent to api.twilio.com (United States): communication outside Quebec.', 'remediation' => 'Carry out a privacy impact assessment (PIA, "EFVP" in Quebec) before the communication, and govern it with a written agreement.', 'recipient' => 'api.twilio.com', 'jurisdiction' => 'US'],
             $output['findings'],
         );
         self::assertIsArray($output['flows']);
@@ -46,7 +46,7 @@ final class ScanCommandTest extends KernelTestCase
 
         $tester->assertCommandIsSuccessful();
         self::assertStringContainsString('patients.nam', $tester->getDisplay());
-        self::assertStringContainsString('Identifiant gouvernemental', $tester->getDisplay());
+        self::assertStringContainsString('Government identifier', $tester->getDisplay());
         self::assertStringContainsString('api.twilio.com', $tester->getDisplay());
         self::assertStringContainsString('PII-005', $tester->getDisplay());
     }
@@ -71,8 +71,8 @@ final class ScanCommandTest extends KernelTestCase
         $tester->execute(['path' => __DIR__.'/../../../demo/legacy-app', '--replay' => true]);
 
         $tester->assertCommandIsSuccessful();
-        self::assertStringContainsString('réponses rejouées depuis un vrai appel enregistré', self::display($tester));
-        self::assertStringContainsString('Rejeu : les réponses du modèle viennent de agent-arbitration.json', self::display($tester));
+        self::assertStringContainsString('answers replayed from a real recorded call', self::display($tester));
+        self::assertStringContainsString('Replay: the model answers come from agent-arbitration.json', self::display($tester));
     }
 
     public function testReplayOnlyWorksOnTheDemo(): void
@@ -80,7 +80,7 @@ final class ScanCommandTest extends KernelTestCase
         $tester = $this->tester();
 
         self::assertSame(Command::FAILURE, $tester->execute(['path' => __DIR__.'/../../Fixtures/code/clinic', '--replay' => true]));
-        self::assertStringContainsString('ne fonctionne que sur l\'appli de démo', self::display($tester));
+        self::assertStringContainsString('only works on the demo application', self::display($tester));
         self::assertSame(Command::INVALID, $this->tester()->execute(['path' => '.', '--replay' => true, '--no-ai' => true]));
     }
 

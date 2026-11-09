@@ -21,7 +21,7 @@ final class ConcatenatedSqlRule implements Rule
 
     public function title(): string
     {
-        return 'Requête SQL concaténée avec une donnée personnelle';
+        return 'SQL query concatenated with personal data';
     }
 
     public function evaluate(AuditContext $context): array
@@ -38,8 +38,8 @@ final class ConcatenatedSqlRule implements Rule
                 Sensitivity::Low === $context->highestSensitivity($fields) ? Severity::Medium : Severity::High,
                 $flow->location,
                 $fields,
-                \sprintf('Requête sur %s construite en concaténant %s.', $flow->target ?? 'la base', implode(', ', array_map('strval', $fields))),
-                'Utiliser une requête préparée avec des paramètres liés (PDO, mysqli_prepare, QueryBuilder Doctrine).',
+                \sprintf('Query on %s built by concatenating %s.', $flow->target ?? 'the database', implode(', ', array_map('strval', $fields))),
+                'Use a prepared statement with bound parameters (PDO, mysqli_prepare, Doctrine QueryBuilder).',
             );
         }
 

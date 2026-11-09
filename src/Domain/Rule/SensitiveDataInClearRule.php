@@ -25,7 +25,7 @@ final class SensitiveDataInClearRule implements Rule
 
     public function title(): string
     {
-        return 'Donnée sensible stockée en clair';
+        return 'Sensitive data stored in clear';
     }
 
     public function evaluate(AuditContext $context): array
@@ -43,8 +43,8 @@ final class SensitiveDataInClearRule implements Rule
                 Severity::High,
                 $column->location,
                 [$column->reference],
-                \sprintf('%s (%s) est stocké en clair dans une colonne %s.', $column->reference, mb_strtolower($candidate->category->label()), $column->type),
-                'Chiffrer la colonne au repos, par exemple avec un type Doctrine chiffré (libsodium), et limiter qui peut la lire.',
+                \sprintf('%s (%s) is stored in clear in a %s column.', $column->reference, mb_strtolower($candidate->category->label()), $column->type),
+                'Encrypt the column at rest, for example with an encrypted Doctrine type (libsodium), and restrict who can read it.',
             );
         }
 

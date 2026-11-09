@@ -12,12 +12,12 @@ namespace App\Domain\Pii;
 final class PiiMasker
 {
     private const array PATTERNS = [
-        '/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i' => '[COURRIEL]',
+        '/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i' => '[EMAIL]',
         '/\b[A-Z]{4}\s?\d{4}\s?\d{4}\b/' => '[NAM]',
-        '/\b(?:\d[ -]?){13,19}\b/' => '[CARTE]',
-        '/\b\d{3}[ -]\d{3}[ -]\d{3}\b/' => '[NAS]',
-        '/(?<![\d+])(?:\+?1[ .-]?)?\(?\d{3}\)?[ .-]?\d{3}[ .-]?\d{4}(?!\d)/' => '[TELEPHONE]',
-        '/\b[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d\b/i' => '[CODE_POSTAL]',
+        '/\b(?:\d[ -]?){13,19}\b/' => '[CARD]',
+        '/\b\d{3}[ -]\d{3}[ -]\d{3}\b/' => '[SIN]',
+        '/(?<![\d+])(?:\+?1[ .-]?)?\(?\d{3}\)?[ .-]?\d{3}[ .-]?\d{4}(?!\d)/' => '[PHONE]',
+        '/\b[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d\b/i' => '[POSTAL_CODE]',
         '/\b(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}\b/' => '[IP]',
     ];
 

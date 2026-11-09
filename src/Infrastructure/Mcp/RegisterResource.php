@@ -24,20 +24,20 @@ final readonly class RegisterResource
     #[McpResource(
         uri: 'pii://register',
         name: 'register',
-        title: 'Registre Loi 25 (brouillon)',
-        description: 'Brouillon d\'inventaire des renseignements personnels au sens de la Loi 25 : renseignements, tiers, conservation, mesures de sécurité, points à confirmer.',
+        title: 'Law 25 register (draft)',
+        description: 'Draft inventory of personal information under Quebec Law 25: information held, third parties, retention, security measures, points to confirm.',
         mimeType: 'text/markdown',
     )]
-    public function loi25(): string
+    public function law25(): string
     {
-        return $this->render(RegisterFormat::Loi25);
+        return $this->render(RegisterFormat::Law25);
     }
 
     #[McpResource(
-        uri: 'pii://register/rgpd',
+        uri: 'pii://register/gdpr',
         name: 'register_gdpr',
-        title: 'Registre RGPD (brouillon)',
-        description: 'Brouillon de registre des activités de traitement (article 30 du RGPD).',
+        title: 'GDPR register (draft)',
+        description: 'Draft record of processing activities (GDPR article 30).',
         mimeType: 'text/markdown',
     )]
     public function gdpr(): string
@@ -50,7 +50,7 @@ final readonly class RegisterResource
         try {
             $stored = $this->project->report();
         } catch (NoReport $exception) {
-            return "# Registre (brouillon)\n\n".$exception->getMessage()."\n";
+            return "# Register (draft)\n\n".$exception->getMessage()."\n";
         }
 
         return $this->renderer->render($this->builder->build($stored), $format);
