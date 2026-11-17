@@ -4,9 +4,13 @@
 
 **PII Radar finds where a legacy PHP application stores, logs and leaks personal data, then drafts a Quebec Law 25 / GDPR register.** The data map is exposed as an MCP server: your coding assistant can ask "where does the patient email live?" or "may I log this field?" before writing a single line.
 
-100% PHP, built with [Symfony AI](https://symfony.com/doc/current/ai/index.html) and the [MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk) for the Symfony AI & MCP Hackathon.
+100% PHP, built with [Symfony AI](https://symfony.com/doc/current/ai/index.html) and the [MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk) for the [Symfony AI & MCP Hackathon](https://symfony.com/hackathon/projects/pii-radar-privacy-audit-for-legacy-php).
 
 > **Disclaimer:** PII Radar produces a *draft* inventory to support compliance work. It is not legal advice.
+
+[![Watch the 90-second demo of PII Radar on YouTube](docs/images/video-thumbnail.png)](https://www.youtube.com/watch?v=FVFn2Hu5NN8)
+
+**[▶ Watch the 90-second demo](https://www.youtube.com/watch?v=FVFn2Hu5NN8)**: scan, flow map, Law 25 register, and Claude Code checking PII Radar over MCP.
 
 ![PII Radar web report on the demo app: findings by severity and map of personal data flows](docs/images/report.png)
 
